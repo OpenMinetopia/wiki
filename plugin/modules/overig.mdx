@@ -1,0 +1,139 @@
+---
+title: "Overige functies"
+description: "Het hoofdcommando /openminetopia, PvP-items, prullenbakken en items op je hoofd."
+icon: "ellipsis"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/modules/core/ (CoreModule.java, commands/OpenMinetopiaCommand.java), src/main/java/nl/openminetopia/modules/misc/ (MiscModule.java, commands/HeadCommand.java, listeners/PlayerAttackListener.java, listeners/TrashcanListener.java, objects/PvPItem.java, utils/MiscUtils.java), src/main/java/nl/openminetopia/configuration/DefaultConfiguration.java, src/main/java/nl/openminetopia/utils/config/ConfigUtils.java, src/main/resources/default/config.yml, src/main/resources/default/messages.yml */}
+
+Op deze pagina staan de kleinere functies van OpenMinetopia. Het hoofdcommando `/openminetopia` hoort bij de module `core`. PvP-items, prullenbakken en `/head` horen bij de module `misc`.
+
+## Het hoofdcommando
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/openminetopia` | Toont de versie en de auteurs van de plugin. | Geen |
+| `/openminetopia help [pagina]` | Toont de commando's van OpenMinetopia, tien per pagina. De valuta-commando's staan er niet in. Klik op een commando om het in je chat te zetten. | `openminetopia.help` |
+| `/openminetopia reload` | Laadt de configuratiebestanden opnieuw in. | `openminetopia.reload` |
+
+<Info>
+  Aliassen: `/omt`, `/minetopia` en `/sdb`.
+</Info>
+
+### Wat reload herlaadt
+
+`/openminetopia reload` leest deze bestanden opnieuw in:
+
+- `config.yml` en `messages.yml`
+- `levelcheck.yml`
+- `colors.yml`, `fitness.yml`, `banking.yml`, `plotcalculate.yml`, `books.yml` en `labymod.yml`, als die module aan staat
+- de map `items`, als de module `items` aan staat
+
+Andere bestanden, zoals `currencies.yml`, herlaad je door de server te herstarten. Een reload zet ook geen modules aan of uit. Herstart daarvoor de server.
+
+## Items op je hoofd
+
+Met `/head` zet je het item in je hand op je hoofd. Dat werkt alleen voor items op de head-whitelist in `config.yml`. Zo draag je bijvoorbeeld een nachtkijker of bivakmuts uit de [politiemodule](/plugin/modules/politie).
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/head` | Zet het item in je hand op je hoofd. Wat je al op je hoofd had, gaat naar je inventaris. | Geen |
+| `/head add` | Zet het item in je hand op de head-whitelist. | `openminetopia.head.add` |
+| `/head remove` | Haalt het item in je hand van de head-whitelist. | `openminetopia.head.remove` |
+
+`/head add` en `/head remove` slaan de wijziging direct op in `config.yml`.
+
+De whitelist staat onder `head.whitelist`. Elk item heeft dezelfde vorm als de items in de politiemodule: `type` en optioneel `custom-model-data`, `damage` en `item-model`.
+
+Standaard staan deze materialen erop: `CLAY_BALL`, `BEDROCK`, `SPONGE`, `IRON_ORE`, `COAL_ORE`, `LAPIS_ORE`, `DIAMOND_ORE`, `REDSTONE_ORE`, `SOUL_SAND`, `NETHERRACK`, `NETHER_BRICK`, `END_STONE`, `NETHER_QUARTZ_ORE`, `EMERALD_ORE`, `PRISMARINE`, `RED_SANDSTONE`, `INK_SAC`, `MAGMA_CREAM`, `NETHER_WART`, `PRISMARINE_SHARD`, `PRISMARINE_CRYSTALS`, `CARROT_ON_A_STICK`, `SHEARS`, `GLASS`, `BLACK_STAINED_GLASS`, `GREEN_DYE` en een `DIAMOND_HOE` met custom model data `89`.
+
+## PvP-items
+
+Binnen een [plaats](/plugin/modules/plaatsen) bepaal je met PvP-items waarmee spelers elkaar mogen aanvallen. Elk item heeft een eigen bericht voor de aanvaller en voor het slachtoffer.
+
+Staat `pvp.enabled` aan, dan geldt binnen een plaats:
+
+- Een speler kan een andere speler alleen raken met een item uit `pvp.items`.
+- Met een lege hand, een pijl of een sneeuwbal in de hand slaan lukt niet. De aanvaller krijgt dan `misc_pvp_disabled` uit `messages.yml`.
+- Een geschoten pijl of gegooide sneeuwbal raakt alleen als `ARROW` of `SNOWBALL` in `pvp.items` staat.
+- Pijlen doen geen schade aan armor stands.
+- Wapens van QualityArmory worden niet tegengehouden.
+
+Staat `pvp.enabled` op `false`, dan bemoeit deze functie zich nergens mee.
+
+```yaml
+pvp:
+  enabled: true
+```
+
+<Warning>
+  Een nieuwe `config.yml` bevat geen `pvp.items`. Zolang die lijst ontbreekt of leeg is, kan niemand binnen een plaats een andere speler raken, behalve met wapens van QualityArmory. Voeg de lijst zelf toe, bijvoorbeeld met het voorbeeld hieronder.
+</Warning>
+
+Het voorbeeld in de broncode van de plugin (`src/main/resources/default/config.yml`) ziet er zo uit:
+
+```yaml
+pvp:
+  enabled: true
+  items:
+    - item:
+        type: STICK
+      attacker-message: "<red>Je hebt <dark_red><victim> <red>geslagen met jouw knuppel"
+      victim-message: "<red>Je bent geslagen met een knuppel!"
+    - item:
+        type: FERMENTED_SPIDER_EYE
+      attacker-message: "<red>Je hebt <dark_red><victim> <red>geslagen met jouw wapenstok"
+      victim-message: "<red>Je bent geslagen met een wapenstok!"
+    - item:
+        type: STONE_AXE
+      attacker-message: "<red>Je hebt <dark_red><victim> <red>geslagen met jouw knuppel"
+      victim-message: "<red>Je bent geslagen met een knuppel!"
+    - item:
+        type: STONE_HOE
+      attacker-message: "<red>Je hebt <dark_red><victim> <red>geslagen met jouw knuppel"
+      victim-message: "<red>Je bent geslagen met een knuppel!"
+    - item:
+        type: WOODEN_SWORD
+      attacker-message: "<red>Je hebt <dark_red><victim> <red>gestoken met jouw mes"
+      victim-message: "<red>Je bent gestoken met een mes!"
+    - item:
+        type: SNOWBALL
+      attacker-message: "<red>Je hebt <dark_red><victim> <red>geraakt met jouw sneeuwbal"
+      victim-message: "<red>Je bent geraakt met een sneeuwbal!"
+    - item:
+        type: ARROW
+      attacker-message: "<red>Je hebt <dark_red><victim> <red>geraakt met jouw schot"
+      victim-message: "<red>Je bent geraakt met een schot!"
+```
+
+| Sleutel | Betekenis |
+|---|---|
+| `item` | Het item, met `type` en optioneel `custom-model-data`, `damage` en `item-model`. Bij het vergelijken telt schade aan het item niet mee. |
+| `attacker-message` | Het bericht voor de aanvaller. |
+| `victim-message` | Het bericht voor het slachtoffer. |
+
+In beide berichten kun je `<attacker>`, `<victim>` en `<item>` gebruiken. `<item>` wordt de materiaalnaam, bijvoorbeeld `STICK`.
+
+Laat je een bericht weg, dan gebruikt de plugin een ingebouwd bericht met `<player>`. Daarin staat `<player>` voor de naam van wie het bericht leest. Zet de berichten daarom zelf in je config.
+
+## Prullenbakken
+
+Klik op een prullenbak-blok en er opent een leeg menu. Alles wat je erin legt, is weg zodra je het menu sluit. Standaard is elke dropper een prullenbak.
+
+Spelers in creative kunnen een prullenbak met links gewoon kapotslaan.
+
+```yaml
+trashcan:
+  enabled: true
+  blocks:
+    - DROPPER
+  use-dropper-inventory: false
+```
+
+| Sleutel | Standaard | Betekenis |
+|---|---|---|
+| `enabled` | `true` | Zet de prullenbakken aan of uit. |
+| `blocks` | `[DROPPER]` | De blokken die als prullenbak werken. |
+| `use-dropper-inventory` | `false` | Heeft in deze versie nog geen effect. |
+
+De titel van het menu en de melding bij het openen staan in `trashcan_title` en `trashcan_message` in `messages.yml`.

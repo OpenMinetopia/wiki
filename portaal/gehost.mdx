@@ -1,0 +1,195 @@
+---
+title: "Gehost portaal"
+description: "Een gratis portaal op je eigen mtportal.nl-adres, aangemaakt en beheerd via openminetopia.nl."
+icon: "cloud"
+---
+
+{/* Bron: omt-website app/Http/Controllers/InstanceController.php, app/Http/Controllers/RenewController.php, app/Http/Controllers/Auth/AuthController.php, app/Services/Hosting/ (InstanceProvisioner.php, Lifecycle.php, DomainManager.php, SlugGenerator.php, PluginAddress.php, PortalClient.php), app/Services/Dns/ (DnsVerifier.php, DnsCheck.php), app/Models/Instance.php, config/portal.php, config/instances.php, routes/web.php, routes/console.php, resources/views/ (auth/register.blade.php, instances/create.blade.php, instances/show.blade.php, instances/renew.blade.php, components/portal/list.blade.php, mail/lifecycle/*); omt-portal (origin/main) app/Services/Plugin/PluginConnectionCheck.php, app/Services/Plugin/PluginAddressGuard.php, app/Services/Tenancy/AdminClaim.php, app/Http/Controllers/Auth/AdminClaimController.php, app/Http/Middleware/EnsureTenantActive.php, resources/views/errors/paused.blade.php */}
+
+Op [openminetopia.nl](https://openminetopia.nl) maak je gratis een portaal aan. Het staat direct online op `<naam>.mtportal.nl`. Jij koppelt alleen nog de plugin op je Minecraft-server.
+
+## Account aanmaken
+
+Ga naar [openminetopia.nl/register](https://openminetopia.nl/register). Vul je naam, e-mailadres en een wachtwoord van minstens 8 tekens in. Ga akkoord met de voorwaarden en klik op **Account aanmaken**. Je komt dan op je dashboard, **Mijn portalen**.
+
+Dit account is alleen voor de hosting. Op je portaal zelf maak je een apart account aan.
+
+## Portaal aanmaken
+
+<Steps>
+  <Step title="Kies een naam">
+    Klik op **Portaal aanmaken** of **Nieuw portaal**. Vul bij **Naam van je server** de naam in die spelers bovenaan het portaal zien, maximaal 60 tekens.
+  </Step>
+  <Step title="Kies een adres">
+    Het **Adres** wordt automatisch uit de naam gemaakt. Je kunt het zelf aanpassen. Onder het veld zie je meteen of het adres vrij is.
+  </Step>
+  <Step title="Maak het portaal aan">
+    Klik op **Portaal aanmaken**. Je portaal staat meteen live. Daarna koppel je de plugin.
+  </Step>
+</Steps>
+
+Een adres moet aan deze regels voldoen:
+
+- 3 tot 40 tekens.
+- Alleen kleine letters, cijfers en losse streepjes. Geen streepje aan het begin of eind.
+- Nog niet in gebruik, ook niet door een verwijderd portaal.
+- Niet gereserveerd. Gereserveerd zijn `www`, `central`, `api`, `admin`, `app`, `domein`, `mail`, `status`, `portal`, `portals`, `test`, `staging`, `dashboard`, `help` en `support`.
+
+Je kunt maximaal drie portalen per account hebben. Wil je een nieuw portaal, verwijder dan eerst een ander.
+
+<Note>
+Zie je de melding "Nieuwe portalen aanmaken kan tijdelijk niet."? Dan staat het aanmaken van portalen even uit. Probeer het later opnieuw.
+</Note>
+
+## Naam en adres wijzigen
+
+Bij **Naam en adres** op je portaalpagina pas je de naam en het adres aan. Klik daarna op **Opslaan**.
+
+<Warning>
+Na het wijzigen van het adres werkt het oude adres niet meer. Pas dan ook `portal.url` aan in de `config.yml` van de plugin.
+</Warning>
+
+## Beheerder worden
+
+Wie zich op je portaal registreert, wordt gewone speler. Ook jij. Zo word je beheerder:
+
+<Steps>
+  <Step title="Klik op Inloggen als beheerder">
+    Open je portaal op openminetopia.nl en klik bovenaan op **Inloggen als beheerder**. Je gaat naar een eenmalige link op je portaal. De link is kort geldig.
+  </Step>
+  <Step title="Log in of registreer op het portaal">
+    Ben je al ingelogd op het portaal, dan ben je meteen beheerder. Anders kom je op de inlogpagina, of op de registratiepagina als het portaal nog geen accounts heeft. Na het inloggen of registreren ben je beheerder.
+  </Step>
+</Steps>
+
+Net als elke speler koppel je daarna je Minecraft-account met `/koppel`. Zie [Koppelen met de plugin](/portaal/koppelen#je-account-koppelen-als-speler).
+
+Is de link verlopen of al gebruikt? Klik dan opnieuw op **Inloggen als beheerder**. Andere beheerders geef je daarna een rol via **Rollen** en **Gebruikers** in het portaal.
+
+## Eigen domein
+
+Wil je je portaal op je eigen domein, zoals `portal.jouwserver.nl`? Dat kan. Je `mtportal.nl`-adres blijft daarnaast gewoon werken.
+
+<Steps>
+  <Step title="Vul je domein in">
+    Ga naar **Eigen domein**, vul je domein in en klik op **Domein instellen**.
+  </Step>
+  <Step title="Maak een CNAME-record">
+    Maak bij je domeinprovider dit record aan:
+
+    | Type | Naam (host) | Waarde (doel) |
+    |---|---|---|
+    | CNAME | je domein, bijvoorbeeld `portal.jouwserver.nl` | `domein.mtportal.nl` |
+  </Step>
+  <Step title="Wacht op de controle">
+    We controleren je DNS elke paar minuten. Klopt het record, dan vragen we een certificaat aan. Dat duurt meestal een paar minuten. Daarna draait je portaal op je eigen domein.
+  </Step>
+</Steps>
+
+Let op deze punten:
+
+- Gebruik een CNAME, geen A-record. Dan blijft je domein werken als wij ooit verhuizen.
+- Gebruik je Cloudflare? Zet bij dit record de oranje wolk uit (alleen DNS).
+- Op een hoofddomein zonder CNAME-ondersteuning werkt CNAME-flattening of een ALIAS-record ook. Je domein moet dan naar precies dezelfde IP-adressen wijzen als `domein.mtportal.nl`.
+- Wijst je domein na 48 uur nog steeds niet naar `domein.mtportal.nl`, dan stopt het automatisch controleren. Klik op **Nu controleren** om opnieuw te beginnen.
+- Werkt een actief domein niet meer, dan zie je dat bij **Eigen domein**. Actieve domeinen controleren we één keer per dag.
+
+Met **Loskoppelen** haal je je eigen domein weer weg. Je portaal werkt dan alleen nog via je `mtportal.nl`-adres.
+
+## Verlengen
+
+Een gehost portaal is gratis. Om de drie maanden vragen we of je het nog gebruikt. Zo blijven we geen lege portalen hosten.
+
+| Moment | Wat er gebeurt |
+|---|---|
+| 14 en 3 dagen voor de verleng-datum | Je krijgt een herinnering per e-mail. |
+| De verleng-datum is voorbij | Je portaal gaat op pauze. Bezoekers zien een pauzepagina en `/koppel` werkt niet meer. Je gegevens blijven bewaard. Je krijgt een e-mail. |
+| 7 en 1 dag voor het verwijderen | Je krijgt nog een herinnering per e-mail. |
+| 14 dagen na de pauze | Je portaal wordt definitief verwijderd, met de database en alle gegevens. Je krijgt een e-mail. |
+
+De controle draait elk uur. Mist een herinnering, dan krijg je alleen de meest dringende.
+
+Zo verleng je je portaal:
+
+- **Via de e-mail.** Klik op **Portaal verlengen** of **Portaal weer aanzetten**. Je hoeft niet in te loggen. Daarna klik je op de pagina nog één keer op de knop.
+- **Via openminetopia.nl.** In de laatste 14 dagen staat op je portaalpagina de knop **Verlengen met drie maanden**. Staat je portaal op pauze, dan klik je op **Portaal weer aanzetten**.
+
+Na verlengen blijft je portaal drie maanden staan, gerekend vanaf het moment dat je verlengt. Een gepauzeerd portaal werkt meteen weer, met al je gegevens.
+
+## Plugin koppelen
+
+Het portaal haalt zijn gegevens bij de plugin op je Minecraft-server. Dat stel je in bij **Plugin koppelen** op je portaalpagina.
+
+<Steps>
+  <Step title="Vul het adres van de plugin in">
+    Vul bij **IP-adres en poort van de plugin** het openbare IP-adres of de hostnaam van je Minecraft-server in. Vul als poort de poort in die je bij `rest-api.port` zet, standaard `4567`. Die poort moet open staan bij je host.
+
+    Bij **Server-adres voor spelers** kun je het adres invullen waarmee spelers verbinden, zoals `play.jouwserver.nl`. Het portaal toont dat bij het koppelen van hun account. Dit veld is optioneel.
+
+    Klik op **Opslaan**.
+  </Step>
+  <Step title="Zet de instellingen in config.yml">
+    Klik op **Kopieer** en plak het blok in de `config.yml` van de plugin. Met **Toon tokens** zie je de tokens zelf. Herstart daarna de server. Het blok ziet er zo uit:
+
+    ```yaml
+    rest-api:
+      enabled: true
+      host: 0.0.0.0
+      port: 4567
+      api-key: 'plt_...'
+
+    portal:
+      enabled: true
+      url: 'jouwportaal.mtportal.nl'
+      token: 'ist_...'
+    ```
+
+    Je dashboard vult de echte poort, het adres van je portaal en de twee tokens zelf in. Wat elke instelling doet, lees je bij [Koppelen met de plugin](/portaal/koppelen).
+  </Step>
+  <Step title="Test de verbinding">
+    Klik op **Verbinding testen**. Het portaal probeert de plugin te bereiken met jouw `api-key`. Je ziet direct het resultaat.
+  </Step>
+</Steps>
+
+### Adressen die niet werken
+
+Het portaal draait niet op jouw server. Daarom kan het geen interne adressen bereiken. Deze adressen worden geweigerd bij **Opslaan**:
+
+- `localhost` of een leeg veld.
+- Interne IP-adressen, zoals `127.0.0.1`, `10.x.x.x`, `172.16.x.x` tot `172.31.x.x`, `192.168.x.x`, `100.64.x.x` tot `100.127.x.x`, `169.254.x.x` en `0.x.x.x`. Ook de interne IPv6-adressen `::1`, `fc00::/7` en `fe80::/10`.
+- Iets dat geen geldig IP-adres of geldige hostnaam is.
+- Een poort onder 1024 of boven 65535.
+
+Plak je per ongeluk `http://`, een pad of een poort mee in het adresveld, dan halen we dat zelf weg.
+
+Ook een hostnaam die naar een intern adres wijst, werkt niet. Dat zie je pas bij **Verbinding testen**.
+
+### Resultaten van Verbinding testen
+
+In de meldingen hieronder staan `203.0.113.10`, `mc.jouwserver.nl` en `4567` voor jouw adres en poort. De 42 ms is een voorbeeld.
+
+| Melding | Wat het betekent | Wat je doet |
+|---|---|---|
+| "Verbonden in 42 ms. Het portaal bereikt de plugin." | Alles werkt. | Niets. |
+| "De plugin antwoordt, maar de api-key klopt niet. Kopieer rest-api → api-key opnieuw naar de config.yml en herstart de server." | De plugin is bereikbaar, maar weigert de key. | Kopieer het blok opnieuw naar `config.yml` en herstart de server. |
+| "We krijgen geen antwoord van 203.0.113.10:4567. Staat de server aan, staat bij rest-api enabled: true en host: 0.0.0.0, en is poort 4567 open bij je host of in je firewall?" | De verbinding loopt vast of het adres is onbereikbaar. De server is uit, de REST API staat uit of luistert alleen lokaal, of een firewall houdt het verkeer tegen. | Controleer `rest-api.enabled` en `rest-api.host`. Zet de poort open bij je host of in je firewall. |
+| "203.0.113.10:4567 weigert de verbinding. Draait de plugin, en is 4567 dezelfde poort als rest-api → port in de config.yml?" | Op dat adres luistert niets op die poort. | Controleer of de plugin draait en of de poort gelijk is aan `rest-api.port`. |
+| "We kunnen mc.jouwserver.nl niet vinden. Controleer het adres, of gebruik het IP-adres van je server." | De hostnaam bestaat niet. | Controleer de hostnaam of vul het IP-adres in. |
+| "Er antwoordt iets op 203.0.113.10:4567, maar niet de OpenMinetopia-plugin. Is 4567 de poort bij rest-api → port, en niet de poort van Minecraft zelf?" | Er draait iets anders op die poort, vaak de Minecraft-server zelf. Of de plugin gaf een serverfout. | Vul de poort van `rest-api.port` in, niet de poort van Minecraft. |
+| "203.0.113.10 is een intern adres. Vul het openbare IP-adres van je server in." | Het adres, of de hostnaam, wijst naar een intern adres. | Vul het openbare IP-adres van je server in. |
+| "Het portaal bereikt de plugin op 203.0.113.10:4567 niet." | Een andere fout. Soms staat er tussen haakjes een technische melding achter. | Controleer de punten hierboven. Kom je er niet uit, vraag het op [Discord](/community/discord). |
+| "Vul eerst het IP-adres en de poort van de plugin in en sla ze op." | Er is nog geen adres opgeslagen. | Vul het adres en de poort in en klik op **Opslaan**. |
+| "We konden de test nu niet uitvoeren. Probeer het over een minuut opnieuw." | De test zelf lukte niet aan onze kant. | Probeer het over een minuut opnieuw. |
+| "Er ging iets mis. Probeer het opnieuw." | De pagina kreeg geen bruikbaar antwoord. | Probeer het opnieuw. |
+
+## Tokens vernieuwen
+
+Zijn je tokens uitgelekt, bijvoorbeeld in een screenshot? Klik bij **Tokens vernieuwen** op **Nieuwe tokens maken**. De oude tokens werken daarna meteen niet meer. Kopieer het nieuwe blok naar de `config.yml` van de plugin en herstart de server.
+
+## Portaal verwijderen
+
+Bij **Portaal verwijderen** typ je het adres van je portaal ter bevestiging, zonder `.mtportal.nl`. Klik daarna op **Portaal definitief verwijderen**. Je portaal en de database met alle gegevens worden verwijderd. Dat kunnen we niet terugdraaien.
+
+## Geschiedenis
+
+Bij **Geschiedenis** zie je wat er met je portaal is gebeurd. Bijvoorbeeld wanneer het is verlengd, wanneer de verbinding is getest en welke e-mails we hebben gestuurd.

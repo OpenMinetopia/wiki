@@ -1,0 +1,114 @@
+---
+title: "Detectiepoortjes"
+description: "Poortjes die laten zien of een speler illegale items bij zich heeft."
+icon: "shield-halved"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/modules/detectiongates/ (DetectionModule.java, listeners/DetectionListener.java), src/main/java/nl/openminetopia/configuration/DefaultConfiguration.java, src/main/java/nl/openminetopia/utils/config/ConfigUtils.java */}
+
+Een detectiepoortje controleert de inventory van een speler die eroverheen loopt. Heeft hij geen verboden items bij zich, dan kleuren de blokken rond het poortje groen. Heeft hij wel verboden items, dan kleuren ze rood.
+
+## Een poortje bouwen
+
+<Steps>
+  <Step title="Zet het activatieblok neer">
+    Plaats een ijzerblok (`IRON_BLOCK`).
+  </Step>
+  <Step title="Zet er een drukplaat op">
+    Plaats een gouden drukplaat (`LIGHT_WEIGHTED_PRESSURE_PLATE`) bovenop het ijzerblok.
+  </Step>
+  <Step title="Bouw de blokken eromheen">
+    Zet rond de drukplaat blokken die van kleur moeten wisselen. Standaard zijn dat zwart glas, zwarte wol, zwart beton en zwarte terracotta. Ze moeten binnen 5 blokken van de drukplaat staan, in elke richting.
+  </Step>
+</Steps>
+
+## Hoe het werkt
+
+1. Een speler stapt op de drukplaat.
+2. De plugin kijkt of er items uit `flagged-materials` in zijn inventory zitten.
+3. Zonder verboden items worden de blokken vervangen volgens `flag-blocks.safe`. Standaard worden ze lime.
+4. Met verboden items worden ze vervangen volgens `flag-blocks.flagged`. Standaard worden ze rood.
+5. Na `cooldown` seconden krijgen de blokken hun oude kleur terug. Tot die tijd doet het poortje niets als iemand erop stapt.
+
+Stopt de server terwijl blokken gekleurd zijn, dan zet de plugin ze eerst terug.
+
+## Configuratie
+
+Alle instellingen staan in `config.yml` onder `detection-gate`.
+
+```yaml
+detection-gate:
+  enabled: true
+  blocks:
+    replacement-range: 5
+    pressure-plate-type: LIGHT_WEIGHTED_PRESSURE_PLATE
+    activation-block: IRON_BLOCK
+  cooldown: 3
+  flagged-materials:
+  - type: SUGAR
+    custom-model-data: -1
+  - type: IRON_HOE
+    custom-model-data: -1
+  - type: STICK
+    custom-model-data: -1
+  - type: WOODEN_SWORD
+    custom-model-data: -1
+  - type: SPIDER_EYE
+    custom-model-data: -1
+  - type: FERMENTED_SPIDER_EYE
+    custom-model-data: -1
+  - type: SNOWBALL
+    custom-model-data: -1
+  - type: ARROW
+    custom-model-data: -1
+  - type: BOW
+    custom-model-data: -1
+  - type: ROTTEN_FLESH
+    custom-model-data: -1
+  - type: STONE_HOE
+    custom-model-data: -1
+  - type: POISONOUS_POTATO
+    custom-model-data: -1
+  flag-blocks:
+    safe:
+      BLACK_STAINED_GLASS: LIME_STAINED_GLASS
+      BLACK_WOOL: LIME_WOOL
+      BLACK_CONCRETE: LIME_CONCRETE
+      BLACK_TERRACOTTA: LIME_TERRACOTTA
+    flagged:
+      BLACK_STAINED_GLASS: RED_STAINED_GLASS
+      BLACK_WOOL: RED_WOOL
+      BLACK_CONCRETE: RED_CONCRETE
+      BLACK_TERRACOTTA: RED_TERRACOTTA
+```
+
+| Sleutel | Standaard | Wat het doet |
+|---|---|---|
+| `enabled` | `true` | Zet de detectiepoortjes aan of uit. |
+| `blocks.replacement-range` | `5` | Bedoeld als bereik rond de drukplaat. Zie de waarschuwing hieronder. |
+| `blocks.pressure-plate-type` | `LIGHT_WEIGHTED_PRESSURE_PLATE` | De drukplaat van het poortje. |
+| `blocks.activation-block` | `IRON_BLOCK` | Het blok dat onder de drukplaat moet liggen. |
+| `cooldown` | `3` | Aantal seconden dat de blokken gekleurd blijven. |
+| `flagged-materials` | Zie hierboven | De verboden items. |
+| `flag-blocks.safe` | Zwart naar lime | Welk blok in welk blok verandert als de speler niets verbodens heeft. |
+| `flag-blocks.flagged` | Zwart naar rood | Welk blok in welk blok verandert als de speler wel iets verbodens heeft. |
+
+<Warning>
+  De huidige code gebruikt altijd een bereik van 5 blokken. Een andere waarde bij `replacement-range` heeft geen effect.
+</Warning>
+
+### Verboden items
+
+Elk item in `flagged-materials` heeft een `type`, de Bukkit-naam van het item. Met `custom-model-data` maak je het specifieker. Staat die op `-1`, dan telt elk item van dat type. Staat er een ander getal, dan telt alleen een item met precies die custom model data.
+
+Zo kun je een gewone stok toestaan maar een stok met een eigen model verbieden:
+
+```yaml
+  flagged-materials:
+  - type: STICK
+    custom-model-data: 12
+```
+
+### Kleurblokken
+
+Onder `flag-blocks.safe` en `flag-blocks.flagged` zet je per regel `ORIGINEEL_BLOK: NIEUW_BLOK`. Alleen blokken die links in de lijst staan veranderen van kleur. Gebruik voor beide lijsten dezelfde blokken aan de linkerkant.

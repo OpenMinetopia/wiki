@@ -1,97 +1,51 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Introductie"
+description: "OpenMinetopia is een gratis, open-source Minetopia-plugin voor Paper-servers. Gemaakt en onderhouden door de community."
+icon: "house"
 ---
 
-## Setting up
+{/* Bron: openminetopia src/main/resources/paper-plugin.yml, src/main/java/nl/openminetopia/modules/*, README.md, LICENSE; omt-website resources/views/website/pages/homepage.blade.php */}
 
-Get your documentation site up and running in minutes.
+Met OpenMinetopia bouw je je eigen Minetopia-stad, met een bank, plots, levels, politie en meer. De plugin is open-source onder de GPL-3.0-licentie.
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+Deze wiki legt uit hoe je de plugin installeert en instelt, wat elke module doet en hoe je het portaal gebruikt.
 
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Installatie" icon="download" href="/plugin/installatie">
+    Wat je nodig hebt en hoe je de plugin op je server zet.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Configuratie" icon="gear" href="/plugin/configuratie">
+    Alle instellingen in `config.yml` en de andere bestanden.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Commando's en permissies" icon="terminal" href="/plugin/commandos">
+    Elk commando met de permissie die erbij hoort.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Het portaal" icon="globe" href="/portaal">
+    Een webapp waarin spelers hun rekeningen, plots en meer zien.
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## Modules
 
-Everything you need to create world-class documentation.
+OpenMinetopia bestaat uit modules. Elke module heeft een eigen pagina.
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+| Onderdeel | Modules |
+|---|---|
+| Economie | [Bankieren](/plugin/modules/bankieren), [Valuta](/plugin/modules/valuta) |
+| Spelers | [Levels en speeltijd](/plugin/modules/levels), [Fitheid](/plugin/modules/fitheid), [Prefixen](/plugin/modules/prefixen), [Kleuren](/plugin/modules/kleuren), [Chat](/plugin/modules/chat), [Scoreboard en actionbar](/plugin/modules/scoreboard-actionbar) |
+| Wereld | [Steden en werelden](/plugin/modules/plaatsen), [Plots](/plugin/modules/plots), [Teleporters](/plugin/modules/teleporters), [Detectiepoortjes](/plugin/modules/detectiepoortjes), [Sloten](/plugin/modules/sloten), [Tijd](/plugin/modules/tijd) |
+| Politie en staff | [Politie](/plugin/modules/politie), [Staff](/plugin/modules/staff) |
+| Items en extra's | [Items](/plugin/modules/items), [Rugzakken](/plugin/modules/rugzakken), [Boeken](/plugin/modules/boeken), [Overige functies](/plugin/modules/overig) |
+| Koppelingen | [LabyMod](/plugin/modules/labymod), [Skript](/plugin/modules/skript), [PlaceholderAPI](/plugin/placeholders), [REST API](/plugin/rest-api) |
 
-## Need inspiration?
+## Over deze wiki
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+Deze wiki is geschreven vanuit de broncode van de plugin op [GitHub](https://github.com/OpenMinetopia/openminetopia) (branch `master`). Bij elke pagina staat in de bron welke bestanden er beschreven worden.
+
+<Note>
+  De `master`-branch kan verder zijn dan de laatste release op [Modrinth](https://modrinth.com/plugin/openminetopia). Mis je iets of klopt er iets niet met jouw versie? Meld het op [Discord](https://discord.gg/6E3p8mPSVf) of [draag bij](/community/bijdragen).
+</Note>
+
+## Met dank aan
+
+Alle [bijdragers](https://github.com/OpenMinetopia/openminetopia/graphs/contributors) van het project. En MrWouter: veel ontwerpkeuzes zijn geïnspireerd op MinetopiaSDB.

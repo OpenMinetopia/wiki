@@ -1,0 +1,149 @@
+---
+title: "Placeholders"
+description: "De ingebouwde placeholders van OpenMinetopia en de placeholders voor PlaceholderAPI."
+icon: "code"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/utils/ChatUtils.java, src/main/java/nl/openminetopia/utils/placeholderapi/OpenMinetopiaExpansion.java, src/main/java/nl/openminetopia/utils/placeholderapi/PlaceholderRegistry.java, src/main/java/nl/openminetopia/OpenMinetopia.java, src/main/java/nl/openminetopia/api/player/ScoreboardManager.java, src/main/java/nl/openminetopia/api/player/objects/MinetopiaPlayer.java, src/main/java/nl/openminetopia/api/places/MTPlaceManager.java, src/main/java/nl/openminetopia/modules/places/PlacesModule.java, src/main/java/nl/openminetopia/modules/chat/listeners/PlayerChatListener.java, src/main/java/nl/openminetopia/modules/actionbar/runnables/ActionbarRunnable.java, src/main/java/nl/openminetopia/modules/banking/BankingModule.java, src/main/java/nl/openminetopia/modules/banking/configuration/BankingConfiguration.java, src/main/java/nl/openminetopia/configuration/DefaultConfiguration.java, src/main/resources/default/messages.yml */}
+
+OpenMinetopia heeft twee soorten placeholders. De ingebouwde placeholders gebruik je in de teksten van OpenMinetopia zelf, zoals het scoreboard. De PlaceholderAPI-placeholders gebruik je in andere plugins.
+
+## Ingebouwde placeholders
+
+Ingebouwde placeholders schrijf je als `<naam>`. Ze werken in:
+
+- de regels van het scoreboard (`scoreboard.lines` in `config.yml`);
+- de tekst van de actionbar (`actionbar.text`);
+- het chatformaat (`chat.format`);
+- de titel bij het binnenkomen van een plaats (`place_enter_title` en `place_enter_subtitle` in `messages.yml`);
+- veel andere berichten in `messages.yml` die naar een speler gaan.
+
+Zie [Scoreboard en actionbar](/plugin/modules/scoreboard-actionbar) en [Chat](/plugin/modules/chat) voor de standaardteksten.
+
+### Speler
+
+| Placeholder | Wat het toont |
+|---|---|
+| `<player>` | De naam van de speler. |
+| `<display_name>` | De weergavenaam van de speler. |
+| `<level>` | Het huidige level. |
+| `<calculated_level>` | Het berekende level. Zie [Levels](/plugin/modules/levels). |
+| `<levelups>` | Het verschil tussen het berekende en het huidige level. `0` is goud, een positief getal is groen met een `+`, een negatief getal is rood. |
+| `<level_color>` | De actieve levelkleur. |
+| `<prefix>` | De actieve prefix. |
+| `<prefix_color>` | De actieve prefixkleur. |
+| `<name_color>` | De actieve naamkleur. |
+| `<chat_color>` | De actieve chatkleur. |
+
+Draagt de speler een bivakmuts (balaclava), dan tonen `<player>` en `<display_name>` een onleesbare tekst "Balaclava" in plaats van de naam.
+
+### Datum en tijd
+
+| Placeholder | Wat het toont |
+|---|---|
+| `<date>` | De datum van de server, als `dd-MM-yyyy`. |
+| `<time>` | De tijd van de server, als `HH:mm`. |
+| `<new_line>` | Een nieuwe regel. |
+
+### Wereld en stad
+
+Deze placeholders werken alleen als de speler in een geregistreerde wereld staat. Een wereld registreer je met `/mtwereld create`. Zie [Plaatsen](/plugin/modules/plaatsen).
+
+| Placeholder | Wat het toont |
+|---|---|
+| `<world_name>` | De naam van de wereld. |
+| `<world_title>` | De titel van de wereld. |
+| `<world_loadingname>` | De laadnaam van de wereld. |
+| `<world_color>` | De kleur van de wereld. |
+| `<city_name>` | De naam van de stad. |
+| `<city_title>` | De titel van de stad. |
+| `<city_loadingname>` | De laadnaam van de stad. |
+| `<city_color>` | De kleur van de stad. |
+| `<temperature>` | De temperatuur van de stad. |
+
+Staat de speler niet in een stad, dan tonen de `<city_...>`-placeholders en `<temperature>` de waarden van de wereld.
+
+### Fitheid
+
+| Placeholder | Wat het toont |
+|---|---|
+| `<fitness>` | De totale fitheid van de speler. |
+| `<max_fitness>` | De maximale fitheid uit `fitness.yml`. |
+
+Deze werken alleen als de fitheidsmodule aan staat en er fitheidsgegevens van de speler zijn.
+
+### Geld en valuta
+
+| Placeholder | Wat het toont |
+|---|---|
+| `<balance>` | Het saldo van de privérekening, als kaal getal. |
+| `<balance_formatted>` | Het saldo van de privérekening met euroteken, volgens `banking.economy-format` in `banking.yml`. Met het standaardformaat `#,##0.00` wordt 1234.5 dus `€1.234,50`. |
+| `<currency_<id>>` | Het saldo van een valuta, bijvoorbeeld `<currency_graycoin>`. |
+
+Heeft de speler geen privérekening, dan blijven `<balance>` en `<balance_formatted>` als tekst staan.
+
+### Alleen in het chatformaat
+
+| Placeholder | Wat het toont |
+|---|---|
+| `<message>` | Het chatbericht van de speler. |
+
+Draagt de speler een bivakmuts, dan vervangt de chat `<level>`, `<prefix>`, `<name_color>`, `<level_color>`, `<prefix_color>` en `<chat_color>` door de standaardwaarden uit `default` in `config.yml`.
+
+<Tip>
+Staat PlaceholderAPI op je server, dan kun je in dezelfde teksten ook PlaceholderAPI-placeholders gebruiken, zoals `%player_health%`. OpenMinetopia vult die in nadat de eigen placeholders zijn ingevuld.
+</Tip>
+
+## PlaceholderAPI
+
+Staat PlaceholderAPI op de server, dan registreert OpenMinetopia bij het opstarten een eigen uitbreiding. Je hoeft niets te downloaden met `/papi ecloud`.
+
+Alle placeholders beginnen met `%openminetopia_`. Ze werken alleen voor spelers die online zijn.
+
+| Placeholder | Wat het geeft |
+|---|---|
+| `%openminetopia_prefix%` | De actieve prefix. |
+| `%openminetopia_level%` | Het huidige level. |
+| `%openminetopia_calculated_level%` | Het berekende level. |
+| `%openminetopia_prefix_color%` | De actieve prefixkleur. |
+| `%openminetopia_name_color%` | De actieve naamkleur. |
+| `%openminetopia_chat_color%` | De actieve chatkleur. |
+| `%openminetopia_level_color%` | De actieve levelkleur. |
+| `%openminetopia_city%` | De naam van de stad waar de speler staat. Staat hij niet in een stad, dan de naam van de wereld. |
+| `%openminetopia_city_color%` | De kleur van de stad, of anders van de wereld. |
+| `%openminetopia_temperature%` | De temperatuur van de stad, of anders van de wereld. |
+| `%openminetopia_world%` | De naam van de wereld. |
+| `%openminetopia_world_color%` | De kleur van de wereld. |
+| `%openminetopia_balance%` | Het saldo van de privérekening, als kaal getal. |
+| `%openminetopia_balance_formatted%` | Het saldo van de privérekening met euroteken en het formaat uit `banking.yml`. |
+| `%openminetopia_fitness%` | De totale fitheid. Geeft `0` als de fitheidsmodule uit staat. |
+| `%openminetopia_max_fitness%` | De maximale fitheid. Geeft `0` als de fitheidsmodule uit staat. |
+| `%openminetopia_playtime_total%` | De totale speeltijd in seconden. |
+| `%openminetopia_playtime_days%` | Het aantal hele dagen speeltijd. |
+| `%openminetopia_playtime_hours%` | De uren van de speeltijd, na aftrek van de dagen (0 tot 23). |
+| `%openminetopia_playtime_minutes%` | De minuten van de speeltijd, na aftrek van de uren (0 tot 59). |
+| `%openminetopia_playtime_seconds%` | De seconden van de speeltijd, na aftrek van de minuten (0 tot 59). |
+| `%openminetopia_currency_<id>%` | Het saldo van een valuta, bijvoorbeeld `%openminetopia_currency_graycoin%`. De ID moet precies zo geschreven zijn als in `currencies.yml`. |
+
+Met de vier `playtime_`-placeholders bouw je samen een leesbare speeltijd, bijvoorbeeld `%openminetopia_playtime_days%d %openminetopia_playtime_hours%u`.
+
+<Note>
+`%openminetopia_city%`, `%openminetopia_world%` en de andere plaats-placeholders hebben een geregistreerde wereld nodig. Registreer je werelden met `/mtwereld create`.
+</Note>
+
+## Eigen placeholders toevoegen
+
+Voor ontwikkelaars: met `PlaceholderRegistry` voeg je eigen `%openminetopia_...%`-placeholders toe zonder de uitbreiding zelf aan te passen. De registry wordt gecontroleerd voordat de ingebouwde PlaceholderAPI-placeholders aan de beurt zijn.
+
+```java
+import nl.openminetopia.utils.placeholderapi.PlaceholderRegistry;
+
+// %openminetopia_mijn_waarde%
+PlaceholderRegistry.register("mijn_waarde", (offlinePlayer, minetopiaPlayer) ->
+        String.valueOf(minetopiaPlayer.getLevel() * 10));
+
+// Weer weghalen
+PlaceholderRegistry.unregister("mijn_waarde");
+```
+
+De sleutel is niet hoofdlettergevoelig. Een geregistreerde sleutel met dezelfde naam als een ingebouwde placeholder gaat voor. Geef je `null` terug, dan zoekt de uitbreiding verder bij de ingebouwde placeholders. Is daar ook niets, dan laat PlaceholderAPI de placeholder als tekst staan.

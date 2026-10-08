@@ -1,0 +1,68 @@
+---
+title: "Installatie"
+description: "Wat je nodig hebt en hoe je OpenMinetopia op je Paper-server zet."
+icon: "download"
+---
+
+{/* Bron: openminetopia src/main/resources/paper-plugin.yml, build.gradle.kts (targetJavaVersion, runServer), src/main/java/nl/openminetopia/OpenMinetopiaLoader.java, OpenMinetopia.java, modules/banking/BankingModule.java (Vault), modules/player/PlayerModule.java (NPC's), modules/misc/listeners/PlayerAttackListener.java (QualityArmory), modules/labymod/LabymodModule.java; omt-website app/Http/Controllers/WebsiteController.php requirementList() */}
+
+## Wat je nodig hebt
+
+OpenMinetopia is een Paper-plugin. Spigot en Bukkit worden niet ondersteund.
+
+| Plugin | Waarvoor | Status |
+|---|---|---|
+| [Paper](https://papermc.io) | De server-software. | Vereist |
+| [WorldEdit](https://modrinth.com/plugin/worldedit) | Nodig voor WorldGuard en voor het aanmaken van plots. | Vereist |
+| [WorldGuard](https://modrinth.com/plugin/worldguard) | Plots en steden zijn WorldGuard-regio's. | Vereist |
+| Vault | Andere plugins gebruiken het OpenMinetopia-saldo. | Optioneel |
+| PlaceholderAPI | Placeholders voor scoreboards en chat. | Optioneel |
+| Citizens of FancyNpcs | Voor de levelcheck-NPC. | Optioneel |
+| Skript | Eigen scripts koppelen aan OpenMinetopia. | Optioneel |
+| LabyMod Server API | Extra's voor LabyMod-spelers. | Optioneel |
+| QualityArmory | Houdt rekening met QualityArmory-wapens. | Optioneel |
+
+Optionele plugins worden bij het opstarten vanzelf herkend. Alleen voor LabyMod zet je daarnaast `enabled` op `true` in `labymod.yml`. Zie [LabyMod](/plugin/modules/labymod).
+
+<Info>
+  Gebruik de Minecraft-versie die bij de download op [Modrinth](https://modrinth.com/plugin/openminetopia) staat. De huidige broncode (`master`) is gebouwd voor Minecraft 26.2 en Java 25.
+</Info>
+
+## Installeren
+
+<Steps>
+  <Step title="Download de plugin">
+    Download de nieuwste versie van OpenMinetopia op [Modrinth](https://modrinth.com/plugin/openminetopia).
+  </Step>
+  <Step title="Zet de jars in je plugins-map">
+    Zet de jar van OpenMinetopia in de map `plugins` van je server, naast WorldEdit en WorldGuard. Zet daar ook de optionele plugins die je wilt gebruiken.
+  </Step>
+  <Step title="Start de server">
+    Bij de eerste start downloadt Paper een paar bibliotheken die de plugin nodig heeft, zoals de databasedrivers. Je server heeft daarvoor internet nodig.
+
+    Daarna maakt de plugin de map `plugins/OpenMinetopia` aan, met `config.yml`, `messages.yml` en de bestanden van de modules.
+  </Step>
+  <Step title="Stel de plugin in">
+    Standaard bewaart OpenMinetopia alles in een SQLite-bestand. Wil je MySQL of MariaDB gebruiken, of modules uitzetten? Pas dan `config.yml` aan. Alle instellingen staan op [Configuratie](/plugin/configuratie).
+  </Step>
+  <Step title="Herstart de server">
+    Herstart de server zodat je wijzigingen worden geladen.
+  </Step>
+</Steps>
+
+## Volgende stappen
+
+<CardGroup cols={2}>
+  <Card title="Steden en werelden" icon="map" href="/plugin/modules/plaatsen">
+    Maak je eerste stad aan.
+  </Card>
+  <Card title="Plots" icon="house" href="/plugin/modules/plots">
+    Maak plots van WorldGuard-regio's.
+  </Card>
+  <Card title="Bankieren" icon="building-columns" href="/plugin/modules/bankieren">
+    Rekeningen, pinautomaten en salaris.
+  </Card>
+  <Card title="Commando's en permissies" icon="terminal" href="/plugin/commandos">
+    Geef je spelers en staff de juiste rechten.
+  </Card>
+</CardGroup>

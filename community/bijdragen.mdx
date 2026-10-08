@@ -1,0 +1,70 @@
+---
+title: "Bijdragen"
+description: "Meld bugs, stel features voor of stuur een pull request."
+icon: "code-pull-request"
+---
+
+{/* Bron: github.com/OpenMinetopia (repository-lijst), openminetopia .github/workflows/gradle.yml, build.gradle.kts, LICENSE */}
+
+OpenMinetopia is open-source en wordt gemaakt door de community. Iedereen kan meehelpen.
+
+## De repositories
+
+| Repository | Wat erin staat |
+|---|---|
+| [openminetopia](https://github.com/OpenMinetopia/openminetopia) | De plugin. |
+| [portal](https://github.com/OpenMinetopia/portal) | Het [portaal](/portaal), een Laravel-webapp. |
+| [wiki](https://github.com/OpenMinetopia/wiki) | Deze wiki. |
+| [resourcepack](https://github.com/OpenMinetopia/resourcepack) | Het resourcepack. |
+| [resourcepack-converter](https://github.com/OpenMinetopia/resourcepack-converter) | Een converter om oude resourcepacks te moderniseren. |
+
+De plugin valt onder de GPL-3.0-licentie. Het portaal valt onder de MIT-licentie.
+
+## Een bug melden of een feature voorstellen
+
+Open een issue in de repository waar het over gaat. Beschrijf wat je deed, wat je verwachtte en wat er gebeurde. Zet je versie van OpenMinetopia en Paper erbij.
+
+Twijfel je of iets een bug is? Vraag het eerst op [Discord](/community/discord).
+
+## Code bijdragen aan de plugin
+
+<Steps>
+  <Step title="Fork en clone">
+    Fork [OpenMinetopia/openminetopia](https://github.com/OpenMinetopia/openminetopia) en clone je fork.
+  </Step>
+  <Step title="Bouw de plugin">
+    Je hebt JDK 25 nodig. Bouw de plugin met:
+
+    ```bash
+    ./gradlew build
+    ```
+
+    De jar staat daarna in `build/libs`.
+  </Step>
+  <Step title="Test op een lokale server">
+    Start een testserver met de plugin, Vault, PlaceholderAPI, WorldEdit, WorldGuard en QualityArmory:
+
+    ```bash
+    ./gradlew runServer
+    ```
+  </Step>
+  <Step title="Open een pull request">
+    Open een pull request naar de branch `master`. GitHub Actions bouwt de plugin bij elke pull request.
+  </Step>
+</Steps>
+
+## Bijdragen aan de wiki
+
+Elke pagina is een MDX-bestand in [OpenMinetopia/wiki](https://github.com/OpenMinetopia/wiki). Klopt er iets niet, of mist er iets? Pas het bestand aan en open een pull request.
+
+Bekijk je wijzigingen eerst lokaal:
+
+```bash
+npx mint dev
+```
+
+Schrijf alleen wat de code ook echt doet. Zet bovenaan de pagina in een `{/* Bron: ... */}`-commentaar welke bestanden uit de broncode je hebt gebruikt.
+
+## Steunen
+
+Wil je het project steunen zonder code te schrijven? Dat kan via [Ko-fi](https://ko-fi.com/openminetopia).

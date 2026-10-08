@@ -1,0 +1,137 @@
+---
+title: "Valuta"
+description: "Eigen valuta naast de euro, met een eigen commando en automatische beloningen voor speeltijd."
+icon: "coins"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/modules/currencies/ (CurrencyModule.java, configuration/CurrencyConfiguration.java, commands/CurrencyCommand.java, commands/CurrencyCommandHolder.java, tasks/CurrencyTask.java, listeners/*, models/CurrencyModel.java, objects/RegisteredCurrency.java), src/main/java/nl/openminetopia/utils/placeholderapi/OpenMinetopiaExpansion.java, src/main/java/nl/openminetopia/utils/ChatUtils.java, src/main/resources/default/currencies.yml, src/main/resources/default/messages.yml */}
+
+Met de valutamodule maak je eigen valuta naast de euro, bijvoorbeeld munten of punten. Elke valuta krijgt een eigen commando. Spelers kunnen een valuta automatisch verdienen door online te zijn.
+
+Valuta staan los van de [bank](/plugin/modules/bankieren). Ze hebben geen rekening, geen pinautomaat en geen Vault-koppeling.
+
+## Hoe het werkt
+
+- Je stelt valuta in via `currencies.yml`. Elke valuta heeft een ID, zoals `graycoin`.
+- Bij het joinen krijgt een speler van elke ingestelde valuta een saldo van 0, als hij dat nog niet had.
+- Heeft een valuta een `automatic`-blok, dan krijgt een speler elke `interval` seconden speeltijd `amount` erbij. Hij krijgt daar een bericht over in de chat.
+- Staff past saldo's aan met het commando van de valuta.
+
+## Een valuta toevoegen
+
+<Steps>
+  <Step title="Open currencies.yml">
+    Het bestand staat in de map van OpenMinetopia in `plugins`.
+  </Step>
+  <Step title="Voeg een valuta toe">
+    Zet een nieuw blok onder `currencies:`. De key is het ID van de valuta en ook de naam van het commando.
+  </Step>
+  <Step title="Herstart de server">
+    Valuta en hun commando's worden alleen bij het opstarten ingeladen. `/openminetopia reload` laadt `currencies.yml` niet opnieuw.
+  </Step>
+</Steps>
+
+## Configuratie
+
+Dit is het standaardbestand `currencies.yml`:
+
+```yaml
+currencies:
+  graycoin:
+    display-name: Gray Coin
+    aliases:
+      - gc
+    automatic:
+      interval: 3600
+      amount: 1
+```
+
+Dit maakt de valuta `graycoin` met het commando `/graycoin` en de alias `/gc`. Een speler krijgt elk uur speeltijd 1 Gray Coin.
+
+| Key | Uitleg |
+|---|---|
+| `currencies.<id>` | Het ID van de valuta. Dit is ook het commando, dus `graycoin` geeft `/graycoin`. |
+| `display-name` | De naam die spelers in berichten zien. |
+| `aliases` | Extra namen voor het commando. |
+| `automatic` | Laat dit blok weg als spelers de valuta niet automatisch moeten krijgen. |
+| `automatic.interval` | Om de hoeveel seconden speeltijd een speler de beloning krijgt. |
+| `automatic.amount` | Hoeveel een speler per keer krijgt. Gebruik een heel getal. |
+| `ignore-unused` | Standaard `true`. Zie [Oude valuta opruimen](#oude-valuta-opruimen). |
+
+`ignore-unused` staat niet in het bestand dat de plugin meelevert. Bij de eerste start zet de plugin de key zelf in het bestand, naast `currencies:`. Daarna ziet het bestand er zo uit:
+
+```yaml
+currencies:
+  graycoin:
+    display-name: Gray Coin
+    aliases:
+      - gc
+    automatic:
+      interval: 3600
+      amount: 1
+ignore-unused: true
+```
+
+<Note>
+De speeltijd telt alleen als de speler online is. De teller loopt door tussen sessies.
+</Note>
+
+## Commando's
+
+Elke valuta heeft een eigen commando met de naam van haar ID. In de tabel hieronder staat `<id>` voor dat ID, bijvoorbeeld `graycoin`.
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/<id>` | Toont je eigen saldo van deze valuta | Geen |
+| `/<id> help` | Toont de lijst met subcommando's | `openminetopia.currency.<id>` |
+| `/<id> <speler>` | Toont het saldo van een andere speler | `openminetopia.currency.info.<id>` |
+| `/<id> set <speler> <hoeveelheid>` | Zet het saldo van een speler op een bedrag | `openminetopia.currency.set.<id>` |
+| `/<id> add <speler> <hoeveelheid>` | Telt een bedrag op bij het saldo van een speler | `openminetopia.currency.add.<id>` |
+| `/<id> remove <speler> <hoeveelheid>` | Haalt een bedrag van het saldo van een speler af | `openminetopia.currency.remove.<id>` |
+| `/currency purge-unused` | Verwijdert saldo's van valuta die niet meer in `currencies.yml` staan | `openminetopia.currency.purge` |
+
+<Info>
+De aliassen uit `aliases` werken voor alle subcommando's, dus `/gc add <speler> 5` doet hetzelfde als `/graycoin add <speler> 5`. `/currency` heeft ook de alias `/currencies`.
+</Info>
+
+- `/<id>` zonder argumenten werkt alleen in-game.
+- De speler moet al eens op de server zijn geweest. Anders krijg je de melding dat de speler niet bestaat.
+- Tab-completion voor het commando werkt alleen met `openminetopia.currency.<id>`.
+- `remove` kan het saldo onder 0 brengen.
+
+Voor de valuta `graycoin` zijn de permissies dus `openminetopia.currency.graycoin`, `openminetopia.currency.info.graycoin`, `openminetopia.currency.set.graycoin`, `openminetopia.currency.add.graycoin` en `openminetopia.currency.remove.graycoin`.
+
+## Oude valuta opruimen
+
+Haal je een valuta uit `currencies.yml`, dan blijven de saldo's van spelers in de database staan. Met `ignore-unused: true` (de standaard) negeert de plugin die saldo's gewoon. Zet je `ignore-unused` op `false`, dan krijg je in de console steeds waarschuwingen over valuta die niet meer bestaan.
+
+Om de oude saldo's echt te verwijderen gebruik je `/currency purge-unused`. Voer het commando twee keer uit binnen 20 seconden om te bevestigen.
+
+<Warning>
+`/currency purge-unused` verwijdert de saldo's definitief uit de database. Dit kun je niet ongedaan maken.
+</Warning>
+
+## Placeholders
+
+| Placeholder | Waarde |
+|---|---|
+| `%openminetopia_currency_<id>%` | Saldo van de speler in deze valuta, bijvoorbeeld `%openminetopia_currency_graycoin%` |
+
+In teksten van OpenMinetopia zelf, zoals het scoreboard en het chatformaat, gebruik je `<currency_<id>>`, bijvoorbeeld `<currency_graycoin>`. Beide werken alleen voor online spelers. Zie [Placeholders](/plugin/placeholders) voor het volledige overzicht.
+
+## Berichten
+
+De teksten van deze module pas je aan in `messages.yml`. Dit zijn de keys:
+
+| Key | Wanneer |
+|---|---|
+| `currency_automatic_reward` | Een speler krijgt een automatische beloning |
+| `currency_show` | Een speler bekijkt zijn eigen saldo |
+| `currency_show_other` | Iemand bekijkt het saldo van een ander |
+| `currency_balance_set` | Na `set` |
+| `currency_balance_add` | Na `add` |
+| `currency_balance_remove` | Na `remove` |
+| `currency_invalid_amount` | De hoeveelheid is geen geldig getal |
+| `currency_purge_confirm`, `currency_purge_started`, `currency_purge_success`, `currency_purge_error` | Bij `/currency purge-unused` |
+
+In de berichten over saldo's kun je `<amount>` en `<display_name>` gebruiken. `currency_show_other`, `currency_balance_set`, `currency_balance_add` en `currency_balance_remove` hebben ook `<target>`.

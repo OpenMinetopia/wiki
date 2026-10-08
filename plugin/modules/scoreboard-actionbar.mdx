@@ -1,0 +1,100 @@
+---
+title: "Scoreboard en actionbar"
+description: "Het scoreboard aan de zijkant en de tekst in de actionbar, met informatie over de speler en de plek."
+icon: "table-list"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/modules/scoreboard/ (ScoreboardModule.java, commands/ScoreboardCommand.java, listeners/*, runnables/ScoreboardUpdateRunnable.java), src/main/java/nl/openminetopia/api/player/ScoreboardManager.java, src/main/java/nl/openminetopia/modules/actionbar/ (ActionbarModule.java, commands/ActionbarCommand.java, listeners/ActionbarJoinListener.java, runnables/ActionbarRunnable.java), src/main/java/nl/openminetopia/utils/ChatUtils.java, src/main/java/nl/openminetopia/configuration/DefaultConfiguration.java */}
+
+OpenMinetopia toont spelers een scoreboard aan de zijkant van het scherm en een regel tekst in de actionbar. Je bepaalt zelf wat erin staat. Beide zijn alleen zichtbaar in een Minetopia-wereld of stad.
+
+## Scoreboard
+
+Een speler krijgt het scoreboard als hij inlogt. Het scoreboard ververst vanzelf. Is de speler niet in een Minetopia-wereld of stad, dan verdwijnt het scoreboard. Zie [Plaatsen](/plugin/modules/plaatsen).
+
+<Warning>
+In de huidige versie komt het scoreboard niet vanzelf terug als de speler daarna weer een Minetopia-wereld of stad in gaat. Hij krijgt het terug als hij opnieuw inlogt of `/scoreboard` typt.
+</Warning>
+
+### Regels instellen
+
+De inhoud staat in `scoreboard.lines` in `config.yml`. De eerste regel is de titel. De regels daarna zijn de regels op het scoreboard. De plugin gebruikt maximaal 16 regels uit de lijst, dus een titel en 15 regels.
+
+De standaard is:
+
+```yaml
+scoreboard:
+  enabled: true
+  lines:
+    - "<world_title>"
+    - "<world_color>Temperatuur:"
+    - "<temperature>°C"
+    - " "
+    - "<world_color>Level:"
+    - "<level> -> <calculated_level> (<levelups><white>)"
+    - " "
+    - "<world_color>Fitheid:"
+    - "<fitness>/<max_fitness>"
+```
+
+De regel `<level> -> <calculated_level> (<levelups><white>)` toont het huidige level, het berekende level en hoeveel levels de speler omhoog kan. Zie [Levels en speeltijd](/plugin/modules/levels).
+
+| Sleutel | Standaard | Wat het doet |
+|---|---|---|
+| `scoreboard.enabled` | `true` | Zet het scoreboard aan of uit |
+| `scoreboard.lines` | zie hierboven | De titel en de regels |
+
+<Note>
+De module leest `scoreboard.enabled` bij het opstarten. Staat het op `false`, dan bestaat ook het commando `/scoreboard` niet. Herstart de server nadat je deze waarde wijzigt. Wijzigingen in `scoreboard.lines` laad je met `/openminetopia reload`.
+</Note>
+
+## Actionbar
+
+De actionbar toont een regel tekst boven de hotbar. Dat gebeurt alleen als de speler in een Minetopia-wereld of stad is. De tekst ververst vanzelf.
+
+```yaml
+actionbar:
+  enabled: true
+  text: "<world_color>Datum: <white><date> <world_color>Tijd: <white><time>"
+```
+
+| Sleutel | Standaard | Wat het doet |
+|---|---|---|
+| `actionbar.enabled` | `true` | Zet de actionbar aan of uit |
+| `actionbar.text` | zie hierboven | De tekst in de actionbar |
+
+Beide waarden laad je opnieuw met `/openminetopia reload`. Zie [Configuratie](/plugin/configuratie).
+
+## Commando's
+
+Spelers kunnen het scoreboard en de actionbar voor zichzelf uitzetten.
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/scoreboard` | Zet je scoreboard aan of uit | Geen |
+| `/actionbar` | Zet je actionbar aan of uit | Geen |
+
+`/scoreboard` heeft ook de alias `/sb`, en `/actionbar` de alias `/ab`. Logt een speler opnieuw in, dan staan het scoreboard en de actionbar weer aan.
+
+## Placeholders
+
+In de scoreboard-regels en de actionbar-tekst kun je deze placeholders gebruiken:
+
+| Placeholder | Wat het toont |
+|---|---|
+| `<player>` | De naam van de speler |
+| `<display_name>` | De display name van de speler |
+| `<level>` | Het level van de speler |
+| `<calculated_level>` | Het berekende level |
+| `<levelups>` | Het verschil tussen berekend en huidig level: goud bij 0, groen met een `+` als je omhoog kunt, rood als het lager is |
+| `<prefix>` | De actieve prefix |
+| `<prefix_color>`, `<name_color>`, `<chat_color>`, `<level_color>` | De kleuren van de speler. Zie [Kleuren](/plugin/modules/kleuren) |
+| `<world_name>`, `<world_title>`, `<world_loadingname>`, `<world_color>` | Gegevens van de wereld |
+| `<city_name>`, `<city_title>`, `<city_loadingname>`, `<city_color>` | Gegevens van de stad |
+| `<temperature>` | De temperatuur van de plek |
+| `<fitness>`, `<max_fitness>` | De fitheid en de maximale fitheid |
+| `<balance>`, `<balance_formatted>` | Het saldo van de privérekening |
+| `<currency_id>` | Het saldo van de valuta met die id, bijvoorbeeld `<currency_graycoin>`. Zie [Valuta](/plugin/modules/valuta) |
+| `<date>`, `<time>` | De datum (`dd-MM-yyyy`) en tijd (`HH:mm`) van de server |
+
+Heb je PlaceholderAPI, dan werken ook `%...%`-placeholders. Zie ook [Placeholders](/plugin/placeholders).

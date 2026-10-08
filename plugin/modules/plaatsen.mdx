@@ -1,0 +1,104 @@
+---
+title: "Steden en werelden"
+description: "Registreer werelden en steden, zodat OpenMinetopia er actief is met een eigen titel, kleur en temperatuur."
+icon: "map"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/modules/places/ (PlacesModule.java, models/WorldModel.java, models/CityModel.java, commands/mtworld/*, commands/mtcity/*, listeners/PlayerJoinListener.java, listeners/PlayerMoveListener.java, listeners/PlayerTeleportListener.java), src/main/java/nl/openminetopia/api/places/MTPlaceManager.java, src/main/java/nl/openminetopia/api/player/objects/MinetopiaPlayer.java, src/main/java/nl/openminetopia/api/player/ScoreboardManager.java, src/main/java/nl/openminetopia/utils/ChatUtils.java, src/main/java/nl/openminetopia/modules/chat/listeners/PlayerChatListener.java, src/main/java/nl/openminetopia/modules/actionbar/runnables/ActionbarRunnable.java, src/main/java/nl/openminetopia/modules/fitness/utils/FitnessUtils.java, src/main/java/nl/openminetopia/configuration/DefaultConfiguration.java, src/main/resources/default/messages.yml */}
+
+OpenMinetopia werkt alleen in werelden die je registreert. Binnen zo'n wereld kun je steden aanmaken. Een stad is een WorldGuard-regio met een eigen titel, kleur en temperatuur.
+
+## Hoe het werkt
+
+Een geregistreerde wereld of stad heet in de plugin een plaats. Sta je niet in een plaats, dan is OpenMinetopia voor jou niet actief:
+
+- je ziet geen scoreboard en geen actionbar;
+- je chatberichten krijgen niet de opmaak van OpenMinetopia;
+- de effecten van [fitheid](/plugin/modules/fitheid) worden van je afgehaald.
+
+Sta je in een stad, dan is de stad je plaats. Sta je in een geregistreerde wereld maar niet in een stad, dan is de wereld je plaats.
+
+Elke plaats heeft vier instellingen:
+
+| Instelling | Wat het is | Standaard bij aanmaken |
+|---|---|---|
+| Titel | Tekst die je toont met `<world_title>` of `<city_title>`. | `<bold>` plus de laadnaam in hoofdletters |
+| Kleur | Een MiniMessage-kleurtag, bijvoorbeeld `<gold>` of `<#3b82f6>`. | `<gold>` |
+| Laadnaam | De naam die spelers te zien krijgen, bijvoorbeeld in de title bij binnenkomst. | Wat je bij het aanmaken opgeeft |
+| Temperatuur | Een getal dat je toont met `<temperature>`. | `21.64` |
+
+Werelden en steden staan in de database, niet in een configbestand. Wijzigingen met de commando's hieronder gaan direct in. Alleen `/mtstad remove` werkt pas na een herstart: tot dan blijft de stad actief.
+
+### Title bij binnenkomst
+
+Spelers krijgen een title als ze joinen in een plaats. Ze krijgen er ook een als ze van de ene plaats naar de andere lopen, dus een stad in of een stad uit. De tekst staat in `messages.yml`:
+
+```yaml
+place_enter_title: "<city_color>Welkom in"
+place_enter_subtitle: "<city_color><city_loadingname>"
+```
+
+## Een wereld en stad instellen
+
+<Steps>
+  <Step title="Registreer de wereld">
+    Ga in de wereld staan en typ `/mtwereld create <laadnaam>`. De wereld waar je staat wordt geregistreerd. De laadnaam is de naam die spelers zien, niet de mapnaam van de wereld.
+  </Step>
+  <Step title="Maak een WorldGuard-regio voor de stad">
+    Maak met WorldEdit en WorldGuard een regio die de hele stad bedekt, bijvoorbeeld met `//wand` en `/rg define <naam>`. Geef de regio een prioriteit van 0 of hoger. Dat is de standaard.
+  </Step>
+  <Step title="Maak de stad aan">
+    Sta in de geregistreerde wereld en typ `/mtstad create <regio> <laadnaam>`. De regio moet in de wereld liggen waar je staat. De stad heet daarna net als de regio.
+  </Step>
+  <Step title="Pas de stad aan">
+    Stel de kleur, titel en temperatuur in met de commando's hieronder.
+  </Step>
+</Steps>
+
+## Commando's voor werelden
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/mtwereld create <laadnaam>` | Registreert de wereld waar je staat. | `openminetopia.world.create` |
+| `/mtwereld remove <wereld>` | Haalt een wereld uit OpenMinetopia. | `openminetopia.world.remove` |
+| `/mtwereld setcolor <wereld> <kleur>` | Verandert de kleur. | `openminetopia.world.setcolor` |
+| `/mtwereld settitle <wereld> <titel>` | Verandert de titel. | `openminetopia.world.settitle` |
+| `/mtwereld setloadingname <wereld> <laadnaam>` | Verandert de laadnaam. | `openminetopia.world.setloadingname` |
+| `/mtwereld settemperature <wereld> <temperatuur>` | Verandert de temperatuur. | `openminetopia.world.settemperature` |
+
+`<wereld>` is de echte naam van de wereld, zoals `world`. De alias is `/mtworld`. Voor `/mtwereld help` heb je `openminetopia.world` nodig.
+
+## Commando's voor steden
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/mtstad create <regio> <laadnaam>` | Maakt een stad van een WorldGuard-regio. | `openminetopia.city.create` |
+| `/mtstad remove <stad>` | Verwijdert de stad uit de database. De WorldGuard-regio blijft bestaan. | `openminetopia.city.remove` |
+| `/mtstad setcolor <stad> <kleur>` | Verandert de kleur. | `openminetopia.city.setcolor` |
+| `/mtstad settitle <stad> <titel>` | Verandert de titel. | `openminetopia.city.settitle` |
+| `/mtstad setloadingname <stad> <laadnaam>` | Verandert de laadnaam. | `openminetopia.city.setloadingname` |
+| `/mtstad settemperature <stad> <temperatuur>` | Verandert de temperatuur. | `openminetopia.city.settemperature` |
+
+`<stad>` is de naam van de regio. De alias is `/mtcity`. Voor `/mtstad help` heb je `openminetopia.city` nodig.
+
+## Placeholders
+
+Deze placeholders gebruik je in onder andere het scoreboard, de actionbar en `messages.yml`. Ze werken alleen als de speler in een plaats staat.
+
+| Placeholder | Waarde |
+|---|---|
+| `<world_name>` | Naam van de wereld |
+| `<world_loadingname>` | Laadnaam van de wereld |
+| `<world_title>` | Titel van de wereld |
+| `<world_color>` | Kleur van de wereld |
+| `<city_name>` | Naam van de stad |
+| `<city_loadingname>` | Laadnaam van de stad |
+| `<city_title>` | Titel van de stad |
+| `<city_color>` | Kleur van de stad |
+| `<temperature>` | Temperatuur van de stad |
+
+<Info>
+  De `<city_...>`-placeholders en `<temperature>` gaan over de plaats waar de speler staat. Staat hij in een wereld maar niet in een stad, dan tonen ze de waarden van de wereld.
+</Info>
+
+Het standaard scoreboard gebruikt `<world_title>`, `<world_color>` en `<temperature>`. Zie [Scoreboard en actionbar](/plugin/modules/scoreboard-actionbar). Alle placeholders, ook die voor PlaceholderAPI, staan op [Placeholders](/plugin/placeholders).

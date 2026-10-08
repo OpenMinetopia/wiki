@@ -1,0 +1,75 @@
+---
+title: "Wat is het portaal"
+description: "Een open-source webapp waarin spelers hun rekeningen, plots, strafblad en meer zien, gekoppeld aan de OpenMinetopia-plugin."
+icon: "globe"
+---
+
+{/* Bron: omt-portal (origin/main) routes/web.php, routes/api.php, resources/views/portal/layouts/partials/sidebar-content.blade.php, resources/views/portal/dashboard.blade.php, resources/views/portal/admin/settings/index.blade.php, resources/views/auth/register.blade.php, resources/views/auth/verify.blade.php, app/Http/Controllers/Portal/*, app/Http/Controllers/Api/MinecraftVerificationController.php, app/Http/Middleware/ValidateApiKey.php, app/Services/Plugin/*, database/migrations/tenant/2024_12_10_000001_create_critical_data.php, database/migrations/tenant/2024_12_11_000007_add_transactions_feature.php; openminetopia src/main/java/nl/openminetopia/modules/portal/, src/main/java/nl/openminetopia/modules/restapi/; omt-website resources/views/website/pages/homepage.blade.php */}
+
+Het portaal is een open-source webapp die met de OpenMinetopia-plugin praat. Spelers zien er in de browser hun bankrekeningen, plots, strafblad en meer. Het portaal is gebouwd met Laravel en staat op [GitHub](https://github.com/OpenMinetopia/portal).
+
+## Wat spelers kunnen
+
+Een speler maakt een account aan op het portaal met zijn naam, e-mailadres, Minecraft-gebruikersnaam en een wachtwoord. Daarna koppelt hij zijn Minecraft-account in-game met `/koppel`. Pas na het koppelen kan hij de rest van het portaal gebruiken. Hoe dat werkt, lees je bij [Koppelen met de plugin](/portaal/koppelen).
+
+| Onderdeel | Wat je ermee doet |
+|---|---|
+| **Overzicht** | Je saldo, het aantal plots, je baan (prefix), je level en je fitheid in één scherm. |
+| **Mijn bankrekeningen** | Je rekeningen bekijken. Met de functie Banktransacties aan kun je geld overmaken naar je eigen rekeningen of naar een privérekening van een andere speler. |
+| **Mijn plots** | Je plots bekijken. Ben je eigenaar van een plot, dan voeg je eigenaren en leden toe of haal je ze weg. |
+| **Mijn strafblad** | Je eigen strafblad bekijken. |
+| **Makelaar** | Plots te koop zetten en plots van anderen kopen. |
+| **Mijn vergunningen** | Een vergunning aanvragen en je aanvragen volgen. |
+| **Mijn bedrijven** en **Bedrijvenregister** | Een bedrijf aanvragen, de opheffing van je bedrijf aanvragen en het register doorzoeken. |
+
+Kost een vergunning of bedrijf geld, dan betaal je met een van je bankrekeningen. Het geld gaat naar de uitbetalingsrekening die de beheerder heeft gekozen.
+
+## Wat beheerders kunnen
+
+Beheerders en spelers met een rol die extra rechten geeft, zien extra onderdelen in het menu.
+
+| Onderdeel | Voor wie | Wat je ermee doet |
+|---|---|---|
+| **Spelersdatabase** | Beheerders en rollen met het recht Agent | Spelers opzoeken en hun strafblad bekijken. |
+| **Bedrijfsaanvragen** en **Opheffingsaanvragen** | Beheerders en rollen met het recht Bedrijven beheren | Aanvragen voor nieuwe bedrijven en opheffingen goedkeuren of afwijzen. |
+| **Alle aanvragen** (vergunningen) | Beheerders en rollen met het recht Vergunningen beheren | Vergunningaanvragen afhandelen. |
+| **Type bedrijven** en **Type vergunningen** | Beheerders | Bepalen welke bedrijven en vergunningen spelers kunnen aanvragen. |
+| **Gebruikers** | Beheerders | Accounts bekijken en rollen toekennen. |
+| **Plots** | Beheerders | Alle plots bekijken en eigenaren en leden aanpassen. |
+| **Rollen** | Beheerders | Rollen maken en rechten toekennen. |
+| **Instellingen** | Beheerders | Functies aan- of uitzetten en de uitbetalingsrekening voor vergunningen en bedrijven kiezen. |
+
+Deze functies staan in een nieuw portaal uit. Een beheerder zet ze aan bij **Instellingen**:
+
+- **Bedrijven**
+- **Vergunningen**
+- **Makelaar**
+- **Banktransacties**
+
+<Note>
+Wie zich registreert, wordt gewone speler. Bij een gehost portaal word je beheerder via de knop **Inloggen als beheerder** op openminetopia.nl. Zie [Gehost portaal](/portaal/gehost#beheerder-worden).
+</Note>
+
+## Hoe het portaal met de plugin praat
+
+Het portaal en de plugin praten in twee richtingen met elkaar.
+
+- **Portaal naar plugin.** Het portaal haalt alle gegevens op via de [REST API](/plugin/rest-api) van de plugin. Het stuurt bij elke aanvraag de `api-key` uit `rest-api` in de header `X-API-Key` mee. Zonder geldige key antwoordt de plugin met 401.
+- **Plugin naar portaal.** Typt een speler `/koppel <code>`, dan roept de plugin `/api/minecraft/verify` op het portaal aan. De plugin stuurt daarbij de `token` uit `portal` mee als `X-API-Key`.
+
+De plugin moet dus bereikbaar zijn voor het portaal, en het portaal voor de plugin. Welke instellingen daarvoor nodig zijn, staat bij [Koppelen met de plugin](/portaal/koppelen).
+
+## Gehost of zelf hosten
+
+Je kunt het portaal op twee manieren draaien.
+
+<CardGroup cols={2}>
+  <Card title="Gehost via openminetopia.nl" icon="cloud" href="/portaal/gehost">
+    Gratis. Je krijgt een portaal op een eigen adres op `mtportal.nl`. Wij regelen de server.
+  </Card>
+  <Card title="Zelf hosten" icon="server" href="https://github.com/OpenMinetopia/portal">
+    Draai het portaal op je eigen server. De code staat op GitHub.
+  </Card>
+</CardGroup>
+
+Een handleiding voor zelf hosten komt binnenkort op deze wiki.

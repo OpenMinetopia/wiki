@@ -1,0 +1,98 @@
+---
+title: "Boeken"
+description: "Sjablonen voor boetes, bonnen, ID-bewijzen en andere documenten die spelers invullen."
+icon: "book"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/modules/books/ (BooksModule.java, commands/BooksCommand.java, configuration/BooksConfiguration.java, objects/CustomBook.java), src/main/resources/default/books.yml, src/main/java/nl/openminetopia/utils/ChatUtils.java, src/main/java/nl/openminetopia/utils/config/ConfigurateConfig.java */}
+
+Met de boekenmodule maak je documenten voor roleplay, zoals een boete of een rijbewijs. Je zet een sjabloon in `books.yml`. Een speler vraagt het boek op, vult de gevraagde gegevens in via de chat en krijgt een beschreven boek.
+
+De modulenaam voor `disabled-modules` in `config.yml` is `books`.
+
+## Commando's
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/boek krijg <boek>` | Start het invullen van een boek. | `openminetopia.books.<boek>` |
+
+<Info>
+  Aliassen: `/book`, `/boeken` en `/books`. In plaats van `krijg` kun je ook `get` typen.
+</Info>
+
+Elk boek heeft een eigen permissie. Voor het boek `fine` is dat `openminetopia.books.fine`. Bij het aanvullen met Tab zie je alleen de boeken waarvoor je de permissie hebt.
+
+## Zo werkt het
+
+<Steps>
+  <Step title="Vraag het boek op">
+    Typ bijvoorbeeld `/boek krijg fine`.
+  </Step>
+  <Step title="Vul de variabelen in">
+    De plugin stelt de vragen uit `variables` één voor één in de chat. Typ telkens je antwoord. De volgorde kan anders zijn dan in `books.yml`.
+  </Step>
+  <Step title="Ontvang het boek">
+    Je krijgt een beschreven boek met jouw antwoorden erin. Jij staat erin als schrijver. Staat `copy` aan, dan krijg je er ook een kopie bij.
+  </Step>
+</Steps>
+
+## books.yml
+
+Elk boek is een blok in `books.yml`. De naam van het blok is de id van het boek. Die id gebruik je in het commando en in de permissie.
+
+```yaml
+fine:
+  enabled: true
+  copy: true
+  menu-item: DIAMOND
+  name: <world_color>Boete
+  item-name: Boete <player_name> (€<amount>)
+  description: <yellow>Schrijf boetes uit
+  variables:
+    <player_name>:
+      explanation: <world_color>Typ nu de <yellow>spelersnaam<world_color>.
+    <amount>:
+      explanation: <world_color>Typ nu het <yellow>bedrag<world_color>.
+    <reason>:
+      explanation: <world_color>Typ nu de <yellow>reden<world_color>.
+    <issuer>:
+      explanation: <world_color>Typ nu de <yellow>uitgever<world_color>.
+  content: '<black><b>Boete <player_name> (€<amount>)<new_line><blue>===================<new_line><black><b>Speler:<new_line><black><player_name><new_line><black><b>Bedrag: <black><amount><new_line><black><b>Datum uitgave: <black><date><new_line><black><b>Reden:</b><black> <reason><new_line><new_line><blue>===================<new_line><black>© <issuer>'
+```
+
+| Sleutel | Betekenis |
+|---|---|
+| `enabled` | Zet het boek aan. Zonder `enabled: true` laadt de plugin het boek niet. |
+| `copy` | Met `true` krijg je naast het origineel ook een kopie. De kopie is te herkennen aan `[COPY]` in de titel. |
+| `name` | De naam in de melding die je krijgt als je het boek ontvangt. |
+| `item-name` | De titel van het boek. Variabelen worden hierin ook vervangen. De titel is maximaal 32 tekens lang. |
+| `variables` | De vragen. De sleutel is de tekst die in `item-name` en `content` wordt vervangen, bijvoorbeeld `<player_name>`. Onder `explanation` staat de vraag die de speler krijgt. |
+| `content` | De tekst van het boek. Na elke 1024 tekens begint een nieuwe pagina. |
+| `menu-item` | Moet een geldig Minecraft-materiaal zijn, anders slaat de plugin het boek over. Het wordt in deze versie verder niet getoond. |
+| `description` | Wordt ingelezen, maar in deze versie nergens getoond. |
+
+In `content`, `item-name` en de vragen werken ook de vaste placeholders uit de chat. De standaardboeken gebruiken `<date>` voor de datum van vandaag en `<new_line>` voor een nieuwe regel. `<world_color>` werkt alleen als de speler in een plaats staat. Zie [Placeholders](/plugin/placeholders).
+
+<Tip>
+  Bij elke start vult de plugin `books.yml` aan met standaardboeken die ontbreken. Een standaardboek verwijderen werkt dus niet. Zet `enabled: false` om het uit te zetten.
+</Tip>
+
+Na een wijziging herlaad je `books.yml` met `/openminetopia reload`.
+
+## Standaardboeken
+
+| Id | Naam | Vraagt naar |
+|---|---|---|
+| `fine` | Boete | spelersnaam, bedrag, reden, uitgever |
+| `receipt` | Bon | spelersnaam, bedrag, bedrijf |
+| `identification` | ID-Bewijs | spelersnaam, woonplaats, uitgever |
+| `kvk` | Kamer van koophandel | bedrijf, bedrijfseigenaar, uitgever, categorie, KvK-nummer, plotnummer |
+| `plotregistration` | Plotbewijs | spelersnaam, stad, plotnummer |
+| `driverslicense` | Rijbewijs | spelersnaam, stad, soort voertuig |
+| `permit` | Vergunning | spelersnaam, uitgever, vergunningssoort, plotnummer |
+| `vog` | VOG | spelersnaam, uitslag, uitgever |
+| `diploma` | Diploma | spelersnaam, soort diploma, uitgever, afdeling |
+| `prescription` | Recept | spelersnaam, medicijnen, uitgever |
+| `cheque` | Cheque | ontvanger, bedrag, uitgever |
+
+Alle standaardboeken staan aan en hebben `copy: true`.

@@ -1,0 +1,132 @@
+---
+title: "Plots"
+description: "Maak plots van WorldGuard-regio's, beheer eigenaren en leden, en bereken wat een gebouw kost."
+icon: "house"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/modules/plots/ (PlotModule.java, commands/PlotCommand.java, commands/subcommands/*, configuration/PlotCalculateConfiguration.java, utils/PlotUtil.java), src/main/java/nl/openminetopia/utils/WorldGuardUtils.java, src/main/java/nl/openminetopia/configuration/DefaultConfiguration.java, src/main/resources/default/plotcalculate.yml, src/main/resources/default/messages.yml */}
+
+Een plot is een WorldGuard-regio met de flag `openmt-plot`. Eigenaren en leden van het plot zijn de owners en members van die regio. Met `/plot` maak en beheer je plots, en met `/plotinfo` ziet iedereen van wie een plot is.
+
+## Een plot aanmaken
+
+<Steps>
+  <Step title="Selecteer het gebied">
+    Selecteer het gebied met WorldEdit, bijvoorbeeld met `//wand`. Een polygon-selectie wordt een polygon-regio. Elke andere selectie wordt een rechthoekige regio (cuboid) om je selectie heen.
+  </Step>
+  <Step title="Maak het plot aan">
+    Typ `/plot create <naam>`. Het plot loopt standaard van de onderkant tot de bovenkant van de wereld. Wil je de hoogte van je selectie gebruiken, typ dan `/plot create <naam> false`.
+  </Step>
+  <Step title="Geef het plot een eigenaar">
+    Ga op het plot staan en typ `/plot addowner <speler>`.
+  </Step>
+</Steps>
+
+Na het aanmaken voert de console de commando's uit `plot.commands-on-create` in `config.yml` uit. Daarmee zet je standaard WorldGuard-flags op het nieuwe plot. Zie [Configuratie](#configuratie).
+
+<Tip>
+  Heb je al een WorldGuard-regio? Maak er een plot van door de flag zelf te zetten: `/rg flag <regio> openmt-plot allow`.
+</Tip>
+
+## Commando's
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/plotinfo` | Toont de eigenaren, leden en beschrijving van het plot waar je staat. | Geen |
+| `/plot create <naam> [hele hoogte]` | Maakt een plot van je WorldEdit-selectie. Standaard over de hele hoogte van de wereld, met `false` alleen de hoogte van je selectie. | `openminetopia.plot.create` |
+| `/plot delete <naam>` | Verwijdert de regio met die naam in de wereld waar je bent. | `openminetopia.plot.delete` |
+| `/plot addowner <speler> [plot]` | Maakt een speler eigenaar. Was hij lid, dan is hij dat niet meer. | `openminetopia.plot.addowner` |
+| `/plot removeowner <speler> [plot]` | Haalt een eigenaar van het plot. | `openminetopia.plot.removeowner` |
+| `/plot addmember <speler> [plot]` | Maakt een speler lid van het plot. | Zie hieronder |
+| `/plot removemember <speler> [plot]` | Haalt een lid van het plot. | Zie hieronder |
+| `/plot clear` | Haalt alle eigenaren en leden van het plot waar je staat. | `openminetopia.plot.clear` |
+| `/plot description <beschrijving> [plot]` | Zet de beschrijving die `/plotinfo` toont. Met `remove`, `delete` of `null` haal je hem weg. | `openminetopia.plot.description` |
+| `/plot list [pagina]` | Toont alle plots in je wereld, 15 per pagina. | `openminetopia.plot.list` |
+| `/plot plist <speler> [pagina]` | Toont de plots in je wereld waar een speler eigenaar of lid van is. | `openminetopia.plot.plist` |
+| `/plot tp <naam>` | Teleporteert je naar het midden van een regio in je wereld, ook in de hoogte. | `openminetopia.plot.tp` |
+| `/plot transfer <overdraagbaar>` | Zet met `true` of `false` of het plot waar je staat overdraagbaar is. | `openminetopia.plot.tranfer` |
+| `/plot calculate [plot]` | Berekent wat het plot en het gebouw erop kosten. | `openminetopia.plot.calculate` |
+
+De alias van `/plot` is `/p` en die van `/plotinfo` is `/pi`. `/plot teleport` werkt ook als `/plot tp`.
+
+Laat je `[plot]` weg, dan gaat het commando over het plot waar je staat. Geef je een naam op, dan moet het plot in de wereld liggen waar je bent.
+
+### Leden toevoegen en verwijderen
+
+`/plot addmember` en `/plot removemember` hebben geen eigen permissie. Eigenaren van het plot mogen ze gebruiken. Spelers met `openminetopia.plot.removemember` mogen ze op elk plot gebruiken.
+
+<Note>
+  Bij `/plot description` is de beschrijving één woord, omdat de plotnaam erachter komt.
+</Note>
+
+<Warning>
+  `/plot delete` en `/plot tp` werken met elke WorldGuard-regio, niet alleen met plots. Let dus op welke naam je typt.
+</Warning>
+
+## Plots overdragen
+
+`/plot transfer` zet de flag `openmt-transfer` op het plot. Die flag is bedoeld voor het [portaal](/portaal). Let op: de permissie is `openminetopia.plot.tranfer`, zonder s na de n.
+
+## De prijs van een plot berekenen
+
+Met `/plot calculate` zie je vijf bedragen. De prijzen komen uit `plotcalculate.yml`.
+
+| Regel | Hoe het wordt berekend |
+|---|---|
+| Prijs plot | De formule `plot-calculate-formula`. `<length>` is de lengte (x) en `<width>` de breedte (z) van de regio. |
+| Prijs gebouw | De optelsom van de prijs uit `block-prices` voor elk blok in de regio. Blokken die niet in de lijst staan tellen als 0. |
+| Bouwerskosten | Het aantal blokken in de regio dat in `block-prices` staat, keer `builders-wage`. |
+| Totale kosten | Prijs gebouw plus bouwerskosten. De prijs van het plot zit hier niet in. |
+| Totale oppervlakte | Het aantal vierkante meters grond van de regio. |
+
+Geef je een plotnaam op, dan moet die precies kloppen, ook in hoofdletters. De blokken worden geteld in de wereld waar jij staat.
+
+## Configuratie
+
+### config.yml
+
+```yaml
+plot:
+  commands-on-create:
+  - rg flag <plot> -w <world> interact -g NON_MEMBERS DENY
+  - rg flag <plot> -w <world> chest-access -g NON_MEMBERS DENY
+  - rg flag <plot> -w <world> USE -g MEMBERS ALLOW
+  - rg flag <plot> -w <world> INTERACT -g MEMBERS ALLOW
+  - rg flag <plot> -w <world> PVP ALLOW
+```
+
+| Sleutel | Wat het doet |
+|---|---|
+| `plot.commands-on-create` | Commando's die de console uitvoert na `/plot create`. `<plot>` wordt de naam van het plot en `<world>` de naam van de wereld. |
+
+### plotcalculate.yml
+
+```yaml
+block-prices:
+  STONE: 125
+  GRASS_BLOCK: 0
+  OAK_LEAVES: 35
+  OAK_SLAB: 100
+  OAK_DOOR: 50
+  # ... en nog veel meer blokken
+builders-wage: 20
+plot-calculate-formula: <length> * <width> * 32
+```
+
+| Sleutel | Standaard | Wat het doet |
+|---|---|---|
+| `builders-wage` | `20` | Bedrag per blok voor de bouwerskosten. |
+| `plot-calculate-formula` | `<length> * <width> * 32` | Rekensom voor de prijs van het plot. |
+| `block-prices` | Een lange lijst | Prijs per bloktype. Gebruik de Bukkit-namen, zoals `STONE`. Een onbekende naam geeft een waarschuwing in de console. |
+
+Het meegeleverde `plotcalculate.yml` bevat alleen `block-prices`. De plugin vult `builders-wage` en `plot-calculate-formula` bij de eerste start aan met de standaardwaarden.
+
+## WorldGuard-flags
+
+OpenMinetopia registreert drie eigen flags in WorldGuard.
+
+| Flag | Soort | Waarvoor |
+|---|---|---|
+| `openmt-plot` | State | Maakt van een regio een plot. `/plot create` zet hem op `allow`. |
+| `openmt-description` | Tekst | De beschrijving van `/plot description`. |
+| `openmt-transfer` | State | Of het plot overdraagbaar is, via `/plot transfer`. |

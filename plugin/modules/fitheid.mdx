@@ -1,0 +1,368 @@
+---
+title: "Fitheid"
+description: "Fitheid bepaalt hoe snel een speler loopt en hoe hoog hij springt, op basis van bewegen, eten, drinken en boosters."
+icon: "heart-pulse"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/modules/fitness/ (FitnessModule.java, configuration/FitnessConfiguration.java, commands/*, listeners/*, runnables/*, utils/FitnessUtils.java, models/*, objects/*), src/main/java/nl/openminetopia/api/player/fitness/ (Fitness.java, FitnessStatisticType.java, FitnessStatisticTypes.java, DefaultFitnessStatisticType.java), src/main/java/nl/openminetopia/modules/data/storm/adapters/FitnessStatisticTypeAdapter.java, src/main/java/nl/openminetopia/utils/item/ItemUtils.java, src/main/java/nl/openminetopia/utils/config/ConfigUtils.java, src/main/resources/default/fitness.yml, src/main/resources/default/messages.yml, src/main/java/nl/openminetopia/framework/runnables/AbstractDirtyRunnable.java, src/main/java/nl/openminetopia/modules/player/utils/PlaytimeUtil.java */}
+
+Fitheid is een getal dat laat zien hoe fit een speler is. Hoe hoger je fitheid, hoe sneller je loopt. Je kunt per fitheidsniveau ook effecten geven, zoals Jump Boost. Spelers verdienen fitheid door te bewegen, te eten en te drinken.
+
+## Hoe fitheid werkt
+
+De totale fitheid van een speler bestaat uit:
+
+- de startwaarde `default-fitness-level` (standaard 20);
+- de fitheid die hij met elke statistiek heeft verdiend;
+- de som van al zijn actieve boosters.
+
+De totale fitheid is minimaal 1 en maximaal `max-fitness-level` (standaard 225). De plugin rekent de fitheid regelmatig opnieuw uit. Krijgt een speler een booster, dan gebeurt dat binnen een paar seconden.
+
+Fitheid telt ook mee voor het level van een speler. Zie [Levels en speeltijd](/plugin/modules/levels).
+
+### Statistieken
+
+Elke statistiek levert fitheid op tot een eigen maximum.
+
+| Statistiek | Hoe je fitheid verdient | Standaard maximum |
+|---|---|---|
+| Lopen | 1 fitheid per `cm-per-level` gelopen (standaard 1.000.000 cm, 10 km) | 30 |
+| Rennen | 1 fitheid per `cm-per-level` gesprint (standaard 2.000.000 cm, 20 km) | 40 |
+| Klimmen | 1 fitheid per `cm-per-level` geklommen (standaard 500.000 cm, 5 km) | 30 |
+| Zwemmen | 1 fitheid per `cm-per-level` gezwommen (standaard 600.000 cm, 6 km) | 30 |
+| Vliegen | 1 fitheid per `cm-per-level` gevlogen met een elytra (standaard 3.000.000 cm, 30 km) | 30 |
+| Drinken | Punten per gedronken drankje. Bij 1 punt krijg je 1 fitheid | 20 |
+| Eten | Punten per gegeten item uit de eetlijsten. Bij 1 punt krijg je 1 fitheid | 20 |
+| Fatsoenlijk eten | Punten op basis van je hongerbalk, rond elk vol uur speeltijd. Bij 1 punt krijg je 1 fitheid | 10 |
+
+De afstanden komen uit de Minecraft-statistieken van de speler. Afstand die een speler al had afgelegd voordat je de plugin installeerde, telt dus ook mee.
+
+<Warning>
+In de huidige versie werkt de plugin een bewegingsstatistiek niet meer bij zodra de berekende fitheid boven het maximum uitkomt. Had een speler bij de eerste berekening al meer afstand dan nodig is voor het maximum, dan krijgt hij voor die statistiek 0 fitheid.
+
+Bij Drinken en Eten kan de verdiende fitheid 1 hoger worden dan het maximum, dus 21 bij een maximum van 20.
+</Warning>
+
+#### Drinken
+
+Een speler krijgt punten als hij een drankje (potion) drinkt:
+
+- een waterfles geeft `points-per-water-bottle` punten (standaard 0,02);
+- een ander drankje geeft `points-per-potion` punten (standaard 0,05).
+
+Na het drinken moet de speler `drinking-cooldown` minuten wachten (standaard 5). Probeert hij eerder te drinken, dan wordt het drinken geannuleerd en krijgt hij de melding `fitness_drinking_cooldown`.
+
+#### Eten
+
+In `food-items` staan twee lijsten: `luxury` en `cheap`. Een item uit `luxury` geeft `points-for-luxury-food` punten (standaard 0,05). Een item uit `cheap` geeft `points-for-cheap-food` punten (standaard 0,02).
+
+Een item telt mee als het `material` en de `custom-model-data` allebei overeenkomen. Een waarde van `0` bij `custom-model-data` is niet toegestaan; de plugin slaat zo'n regel over.
+
+De plugin houdt bij hoeveel items uit `cheap` en uit `luxury` een speler heeft gegeten. Bij elke herberekening rekent hij die aantallen om naar punten. Bij 1 punt of meer krijgt de speler 1 fitheid.
+
+<Warning>
+In de huidige versie telt een item alleen mee als het een custom model data heeft die gelijk is aan `custom-model-data`. Gewoon eten zonder custom model data telt niet mee, ook niet met de standaardwaarde `-1`.
+
+De aantallen gegeten items gaan na het verdienen van fitheid niet terug naar 0. Heeft een speler eenmaal 1 punt bereikt, dan krijgt hij bij elke herberekening opnieuw 1 fitheid, tot het maximum.
+</Warning>
+
+#### Fatsoenlijk eten
+
+In de eerste minuut van elk uur speeltijd kijkt de plugin naar de hongerbalk van de speler. De plugin controleert elke speler ongeveer elke 15 tot 50 seconden. Daardoor gebeurt de check in die minuut vaak meer dan één keer, en elke check telt mee. Een volle hongerbalk is 20. Tussen 11 en 17 verandert er niets.
+
+| Hongerbalk | Punten | Sleutel |
+|---|---|---|
+| 18 of hoger | +0,08 | `points-above-9-hearts` |
+| 5 tot en met 10 | -0,066 | `points-below-5-hearts` |
+| 4 of lager | -0,1 | `points-below-2-hearts` |
+
+<Note>
+De sleutel `check-interval` staat in `fitness.yml`, maar de plugin gebruikt hem op dit moment niet. De check gebeurt altijd in de eerste minuut van elk uur speeltijd.
+</Note>
+
+### Effecten per fitheidsniveau
+
+Onder `levels` stel je per bereik van fitheid de loopsnelheid en effecten in. Een bereik schrijf je als `minimum-maximum`, bijvoorbeeld `20-29`.
+
+- `walk-speed` is de loopsnelheid. De normale Minecraft-loopsnelheid is `0.2`.
+- `effects` is een lijst met effecten als `EFFECT:niveau`, bijvoorbeeld `JUMP_BOOST:1` voor Jump Boost I. Niveau `0` geeft geen effect.
+
+De effecten gelden alleen in een Minetopia-wereld of stad. Zie [Plaatsen](/plugin/modules/plaatsen). Daarbuiten haalt de plugin de effecten weg en zet hij de loopsnelheid terug op `0.2`.
+
+Staat `rain-slowdown-enabled` op `true`, dan loopt een speler 0,05 langzamer als het in zijn wereld regent of stormt. De loopsnelheid wordt nooit lager dan `0.1`.
+
+## Boosters
+
+Een booster geeft een speler extra fitheid, of juist minder als het getal negatief is. Een booster is tijdelijk of permanent. Verlopen boosters haalt de plugin vanzelf weg.
+
+Een speler krijgt een booster op drie manieren:
+
+- **Met een commando.** Gebruik `/fitheid booster <speler> <hoeveelheid> [seconden]`. Laat je de seconden weg of vul je 0 of minder in, dan is de booster permanent.
+- **Met een fitheid-item.** Items stel je in onder `items` in `fitness.yml`. Een speler gebruikt het item door het op te eten of te drinken. Is het item niet eetbaar, dan werkt rechtsklikken ook. Het item wordt verbruikt en de speler krijgt `fitness.amount` fitheid voor `fitness.duration` seconden.
+- **Door dood te gaan.** Staat `death-punishment.enabled` op `true`, dan krijgt een speler bij doodgaan een booster van `amount` (standaard -20) voor `duration` minuten (standaard 1440, dus 24 uur).
+
+### Fitheid-items
+
+Een fitheid-item ziet er zo uit:
+
+```yaml
+fitness:
+  items:
+    vitamine_b:
+      item:
+        type: COOKED_BEEF
+        custom-model-data: -1
+        damage: -1
+        item-model: "mtcustom:vitamine_b"
+      fitness:
+        amount: 10 # Hoeveel fitheid booster
+        duration: 10 # In seconden
+```
+
+| Sleutel | Wat het doet |
+|---|---|
+| `item.type` | Het materiaal van het item |
+| `item.custom-model-data` | Custom model data. `-1` betekent geen |
+| `item.damage` | Damage-waarde. `-1` betekent geen |
+| `item.item-model` | Item model, bijvoorbeeld uit een resourcepack |
+| `fitness.amount` | Hoeveel fitheid de booster geeft |
+| `fitness.duration` | Hoe lang de booster duurt, in seconden |
+| `fitness.cooldown` | Hoeveel seconden een speler moet wachten voor het volgende fitheid-item. Standaard `0` |
+
+Een item in de hand van de speler telt als fitheid-item als het materiaal, de custom model data, de damage en het item model overeenkomen.
+
+## Fitheid resetten
+
+Een speler kan zijn fitheid alleen resetten als een stafflid dat toestaat.
+
+<Steps>
+  <Step title="Geef de speler een reset">
+    Gebruik `/fitheid togglereset <speler> true`.
+  </Step>
+  <Step title="De speler reset zijn fitheid">
+    De speler typt `/fitheid reset`.
+  </Step>
+</Steps>
+
+Bij een reset zet de plugin alle statistieken op 0, ook de afstanden in de Minecraft-statistieken. Alle boosters worden verwijderd. De fitheid gaat terug naar `default-fitness-level`. Daarna kan de speler niet nog een keer resetten, tot hij opnieuw een reset krijgt.
+
+## Commando's
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/fitheid` | Toon de hulp met alle subcommando's | Geen |
+| `/fitheid reset` | Reset je eigen fitheid, als je een reset hebt gekregen | Geen |
+| `/fitheid togglereset <speler> <true/false>` | Geef een speler een reset of neem hem af | `openminetopia.fitness.togglereset` |
+| `/fitheid booster <speler> <hoeveelheid> [seconden]` | Geef een online speler een booster | `openminetopia.fitness.booster` |
+| `/fitheid trigger` | Reken je eigen fitheid direct opnieuw uit | `openminetopia.fitness.trigger` |
+
+`/fitheid` heeft ook de alias `/fitness`.
+
+## Configuratie
+
+De instellingen staan in `fitness.yml`.
+
+| Sleutel | Standaard | Wat het doet |
+|---|---|---|
+| `fitness.max-fitness-level` | `225` | De hoogste fitheid die een speler kan hebben |
+| `fitness.default-fitness-level` | `20` | De fitheid waarmee iedereen begint |
+| `fitness.rain-slowdown-enabled` | `false` | Langzamer lopen als het regent |
+| `fitness.statistics.<statistiek>.max-fitness` | zie het bestand | Maximum fitheid uit die statistiek |
+| `fitness.statistics.<beweging>.cm-per-level` | zie het bestand | Aantal centimeter per fitheid, voor `walking`, `sprinting`, `climbing`, `swimming` en `flying` |
+| `fitness.statistics.drinking.points-per-potion` | `0.05` | Punten per drankje dat geen water is |
+| `fitness.statistics.drinking.points-per-water-bottle` | `0.02` | Punten per waterfles |
+| `fitness.statistics.drinking.drinking-cooldown` | `5` | Wachttijd tussen drankjes, in minuten |
+| `fitness.statistics.health.points-above-9-hearts` | `0.08` | Punten bij een hongerbalk van 18 of hoger |
+| `fitness.statistics.health.points-below-5-hearts` | `-0.066` | Punten bij een hongerbalk van 5 tot en met 10 |
+| `fitness.statistics.health.points-below-2-hearts` | `-0.1` | Punten bij een hongerbalk van 4 of lager |
+| `fitness.statistics.eating.points-for-luxury-food` | `0.05` | Punten per item uit `luxury` |
+| `fitness.statistics.eating.points-for-cheap-food` | `0.02` | Punten per item uit `cheap` |
+| `fitness.statistics.eating.food-items` | zie het bestand | De lijsten `luxury` en `cheap`, met `material` en `custom-model-data` |
+| `fitness.death-punishment.enabled` | `true` | Booster bij doodgaan aan of uit |
+| `fitness.death-punishment.amount` | `-20` | Fitheid van de booster bij doodgaan |
+| `fitness.death-punishment.duration` | `1440` | Duur van die booster, in minuten |
+| `fitness.levels` | zie het bestand | Loopsnelheid en effecten per bereik van fitheid |
+| `fitness.items` | zie het bestand | Fitheid-items die een booster geven |
+
+<Accordion title="Het volledige standaardbestand fitness.yml">
+
+```yaml
+fitness:
+  max-fitness-level: 225
+  default-fitness-level: 20
+  rain-slowdown-enabled: false
+  items:
+    vitamine_b:
+      item:
+        type: COOKED_BEEF
+        custom-model-data: -1
+        damage: -1
+        item-model: "mtcustom:vitamine_b"
+      fitness:
+        amount: 10 # Hoeveel fitheid booster
+        duration: 10 # In seconden
+  statistics:
+    drinking:
+      max-fitness: 20
+      points-per-potion: 0.05
+      points-per-water-bottle: 0.02
+      points-per-fitness-level: 1
+      drinking-cooldown: 5
+    health:
+      max-fitness: 10
+      check-interval: 3600 # How often the health is checked in seconds, based on playtime
+      points-above-9-hearts: 0.08
+      points-below-5-hearts: -0.066
+      points-below-2-hearts: -0.1
+      points-per-fitness-level: 1
+    eating:
+      max-fitness: 20
+      points-for-luxury-food: 0.05
+      points-for-cheap-food: 0.02
+      points-per-fitness-level: 1
+      food-items:
+        luxury:
+          - material: COOKED_BEEF
+            custom-model-data: -1
+          - material: MUSHROOM_STEW
+            custom-model-data: -1
+          - material: COOKED_PORKCHOP
+            custom-model-data: -1
+          - material: COOKED_SALMON
+            custom-model-data: -1
+          - material: COOKED_COD
+            custom-model-data: -1
+          - material: BAKED_POTATO
+            custom-model-data: -1
+          - material: COOKED_RABBIT
+            custom-model-data: -1
+        cheap:
+          - material: APPLE
+            custom-model-data: -1
+          - material: BREAD
+            custom-model-data: -1
+          - material: MELON
+            custom-model-data: -1
+          - material: COD
+            custom-model-data: -1
+          - material: COOKED_CHICKEN
+            custom-model-data: -1
+          - material: COOKED_MUTTON
+            custom-model-data: -1
+          - material: COOKIE
+            custom-model-data: -1
+    walking:
+      max-fitness: 30
+      cm-per-level: 1000000
+    sprinting:
+      max-fitness: 40
+      cm-per-level: 2000000
+    climbing:
+      max-fitness: 30
+      cm-per-level: 500000
+    swimming:
+      max-fitness: 30
+      cm-per-level: 600000
+    flying:
+      max-fitness: 30
+      cm-per-level: 3000000
+  death-punishment:
+    duration: 1440
+    enabled: true
+    amount: -20
+  levels:
+    1-9:
+      walk-speed: 0.1
+      effects:
+        - JUMP_BOOST:0
+    10-19:
+      walk-speed: 0.12
+      effects:
+        - JUMP_BOOST:0
+    20-29:
+      walk-speed: 0.15
+      effects:
+        - JUMP_BOOST:0
+    30-39:
+      walk-speed: 0.16
+      effects:
+        - JUMP_BOOST:0
+    40-49:
+      walk-speed: 0.17
+      effects:
+        - JUMP_BOOST:0
+    50-59:
+      walk-speed: 0.19
+      effects:
+        - JUMP_BOOST:0
+    60-69:
+      walk-speed: 0.19
+      effects:
+        - JUMP_BOOST:0
+    70-79:
+      walk-speed: 0.2
+      effects:
+        - JUMP_BOOST:0
+    80-99:
+      walk-speed: 0.22
+      effects:
+        - JUMP_BOOST:0
+    100-119:
+      walk-speed: 0.235
+      effects:
+        - JUMP_BOOST:0
+    120-139:
+      walk-speed: 0.25
+      effects:
+        - JUMP_BOOST:0
+    140-159:
+      walk-speed: 0.27
+      effects:
+        - JUMP_BOOST:1
+    160-179:
+      walk-speed: 0.29
+      effects:
+        - JUMP_BOOST:2
+    180-199:
+      walk-speed: 0.31
+      effects:
+        - JUMP_BOOST:2
+    200-209:
+      walk-speed: 0.325
+      effects:
+        - JUMP_BOOST:3
+    210-225:
+      walk-speed: 0.335
+      effects:
+        - JUMP_BOOST:3
+```
+
+</Accordion>
+
+Bij de eerste start voegt de plugin onder `statistics.health` zelf nog `points-per-health-level: 1.0` toe. De sleutel `points-per-fitness-level` onder `health` leest de plugin niet.
+
+Na een wijziging laad je `fitness.yml` opnieuw met `/openminetopia reload`. Zie [Configuratie](/plugin/configuratie).
+
+Wil je fitheid helemaal uitzetten, zet dan `fitness` in `disabled-modules` in `config.yml`.
+
+## Meldingen
+
+De meldingen van deze module staan in `messages.yml` en beginnen met `fitness_`. Bijvoorbeeld `fitness_drinking_cooldown`, `fitness_no_reset`, `fitness_reset` en `fitness_booster_added_to`.
+
+## Placeholders
+
+Gebruik `<fitness>` en `<max_fitness>` in de chat, het scoreboard en de actionbar. Via PlaceholderAPI zijn ze ook beschikbaar. Zie [Placeholders](/plugin/placeholders).
+
+## Voor developers
+
+Andere plugins kunnen eigen statistieken toevoegen. Maak een klasse die `FitnessStatisticType` implementeert en registreer die met `FitnessStatisticTypes.register(...)`. Een statistiek heeft:
+
+| Methode | Wat het is |
+|---|---|
+| `key()` | Vaste naam. Deze komt in de database |
+| `displayName()` | Naam om te tonen |
+| `icon()` | Materiaal voor menu's. Standaard `PAPER` |
+| `maximum()` | Maximum fitheid uit deze statistiek |
+| `progressPerPoint()` | Hoeveel voortgang nodig is voor 1 fitheid |
+
+De verdiende fitheid van alle statistieken van een speler telt mee in zijn totale fitheid. Je plugin houdt zelf de voortgang van een eigen statistiek bij.

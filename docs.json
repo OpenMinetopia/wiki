@@ -1,122 +1,169 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "OpenMinetopia",
+  "description": "Documentatie van OpenMinetopia, de gratis open-source Minetopia-plugin voor Paper, en van het portaal.",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#3f6b30",
+    "light": "#93d879",
+    "dark": "#3f6b30"
   },
-  "favicon": "/favicon.svg",
+  "fonts": {
+    "family": "Schibsted Grotesk"
+  },
+  "logo": {
+    "light": "/images/brand/wordmark-light.svg",
+    "dark": "/images/brand/wordmark-dark.svg",
+    "href": "https://wiki.openminetopia.nl"
+  },
+  "favicon": "/images/brand/logo.png",
+  "appearance": {
+    "default": "system"
+  },
+  "search": {
+    "prompt": "Zoek in de wiki..."
+  },
   "navigation": {
-    "tabs": [
+    "languages": [
       {
-        "tab": "Guides",
-        "groups": [
+        "language": "nl",
+        "default": true,
+        "tabs": [
           {
-            "group": "Getting started",
-            "pages": [
-              "index",
-              "quickstart",
-              "development"
+            "tab": "Plugin",
+            "groups": [
+              {
+                "group": "Aan de slag",
+                "pages": [
+                  "index",
+                  "plugin/installatie",
+                  "plugin/configuratie"
+                ]
+              },
+              {
+                "group": "Economie",
+                "pages": [
+                  "plugin/modules/bankieren",
+                  "plugin/modules/valuta"
+                ]
+              },
+              {
+                "group": "Spelers",
+                "pages": [
+                  "plugin/modules/levels",
+                  "plugin/modules/fitheid",
+                  "plugin/modules/prefixen",
+                  "plugin/modules/kleuren",
+                  "plugin/modules/chat",
+                  "plugin/modules/scoreboard-actionbar"
+                ]
+              },
+              {
+                "group": "Wereld",
+                "pages": [
+                  "plugin/modules/plaatsen",
+                  "plugin/modules/plots",
+                  "plugin/modules/teleporters",
+                  "plugin/modules/detectiepoortjes",
+                  "plugin/modules/sloten",
+                  "plugin/modules/tijd"
+                ]
+              },
+              {
+                "group": "Politie en staff",
+                "pages": [
+                  "plugin/modules/politie",
+                  "plugin/modules/staff"
+                ]
+              },
+              {
+                "group": "Items en extra's",
+                "pages": [
+                  "plugin/modules/items",
+                  "plugin/modules/rugzakken",
+                  "plugin/modules/boeken",
+                  "plugin/modules/overig"
+                ]
+              },
+              {
+                "group": "Koppelingen",
+                "pages": [
+                  "plugin/modules/labymod",
+                  "plugin/modules/skript"
+                ]
+              },
+              {
+                "group": "Naslag",
+                "pages": [
+                  "plugin/commandos",
+                  "plugin/placeholders",
+                  "plugin/rest-api"
+                ]
+              }
             ]
           },
           {
-            "group": "Customization",
-            "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+            "tab": "Portaal",
+            "groups": [
+              {
+                "group": "Portaal",
+                "pages": [
+                  "portaal/index",
+                  "portaal/gehost",
+                  "portaal/koppelen"
+                ]
+              }
             ]
           },
           {
-            "group": "Writing content",
-            "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "API reference",
-        "groups": [
-          {
-            "group": "API documentation",
-            "pages": [
-              "api-reference/introduction"
-            ]
-          },
-          {
-            "group": "Endpoint examples",
-            "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+            "tab": "Community",
+            "groups": [
+              {
+                "group": "Community",
+                "pages": [
+                  "community/bijdragen",
+                  "community/discord",
+                  "community/faq"
+                ]
+              }
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    ]
   },
   "navbar": {
     "links": [
       {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "label": "Website",
+        "href": "https://openminetopia.nl"
+      },
+      {
+        "label": "Discord",
+        "href": "https://discord.gg/6E3p8mPSVf"
+      },
+      {
+        "label": "GitHub",
+        "href": "https://github.com/OpenMinetopia"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "label": "Download",
+      "href": "https://modrinth.com/plugin/openminetopia"
     }
   },
   "contextual": {
     "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
+      "copy",
+      "view"
+    ]
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "website": "https://openminetopia.nl",
+      "discord": "https://discord.gg/6E3p8mPSVf",
+      "github": "https://github.com/OpenMinetopia"
     }
   }
 }

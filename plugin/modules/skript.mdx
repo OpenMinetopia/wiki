@@ -1,0 +1,105 @@
+---
+title: "Skript"
+description: "Effecten en expressies om OpenMinetopia vanuit Skript te gebruiken."
+icon: "code"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/modules/skript/ (SkriptModule.java, effects/*, expressions/*, expressions/fitness/*), src/main/java/nl/openminetopia/api/player/objects/MinetopiaPlayer.java, src/main/java/nl/openminetopia/modules/fitness/listeners/PlayerEatListener.java, src/main/resources/paper-plugin.yml */}
+
+Gebruik je [Skript](https://github.com/SkriptLang/Skript)? Dan kun je in je scripts prefixen, strafbladen, speeltijd en fitheid van OpenMinetopia gebruiken.
+
+De modulenaam voor `disabled-modules` in `config.yml` is `skript`.
+
+## Instellen
+
+Zet Skript in je plugins-map. OpenMinetopia herkent Skript bij het opstarten en registreert dan de syntax hieronder. Je hoeft niets in te stellen.
+
+## Hoe je de patronen leest
+
+De patronen hieronder zijn precies zoals de plugin ze registreert.
+
+- `(omt|openminetopia)`: kies één van de twee. `omt add prefix ...` en `openminetopia add prefix ...` doen hetzelfde.
+- `[the]`: dit deel mag je weglaten.
+- `%player%` is één speler, `%players%` één of meer spelers.
+- `%string%` is tekst, `%integer%` een geheel getal en `%timespan%` een tijdsduur zoals `7 days`. Het streepje in `%-string%` hoort bij de Skript-notatie. In je script schrijf je gewoon een tekst.
+
+Alle effecten en expressies werken alleen voor spelers die online zijn.
+
+## Effecten
+
+### Prefix toevoegen
+
+```
+(omt|openminetopia) add prefix %string% to %players% [(for|with) %-timespan%]
+```
+
+Geeft spelers een prefix. Met een tijdsduur vervalt de prefix na die tijd. Zonder tijdsduur vervalt hij nooit.
+
+### Actieve prefix zetten
+
+```
+(omt|openminetopia) set active prefix of %players% to %-string%
+```
+
+Zet de actieve prefix van spelers. Dit werkt alleen als de speler die prefix al heeft. Hoofdletters maken niet uit.
+
+### Strafblad aanvullen
+
+```
+(omt|openminetopia) add criminalrecord to %players% (by reason of|because [of]|on account of|due to|for|with reason) %-string% by %players%
+```
+
+Zet een regel op het strafblad van spelers. De tekst na `for` (of een van de andere varianten) is de omschrijving. De speler na `by` staat als agent bij de regel.
+
+### Strafblad-regel verwijderen
+
+```
+(omt|openminetopia) remove criminalrecord %integer% from %players%
+```
+
+Haalt de regel met dit id van het strafblad. Het id zie je met `/strafblad info` of met de expressie `criminalrecords` hieronder.
+
+<Warning>
+  In de huidige versie vergelijkt de plugin de id's op een manier die alleen betrouwbaar werkt tot en met id `127`. Bij een hoger id wordt de regel meestal niet verwijderd.
+</Warning>
+
+<Warning>
+  Door een fout in de plugin werkt dit effect alleen voor regels met een id tot en met 127. Bij een hoger id gebeurt er niets. Gebruik dan `/strafblad remove`.
+</Warning>
+
+## Expressies
+
+| Patroon | Geeft terug |
+|---|---|
+| `[the] (omt\|openminetopia) current prefix of %player%` | De actieve prefix (tekst). |
+| `[the] (omt\|openminetopia) prefixes of %player%` | Alle prefixen van de speler (lijst met tekst). |
+| `[the] (omt\|openminetopia) criminalrecords of %player%` | De id's van alle strafblad-regels (lijst met getallen). |
+| `[the] (omt\|openminetopia) playtime of %player%` | De speeltijd in milliseconden (getal). |
+| `[the] (omt\|openminetopia) fitness cheapfood points of %player%` | Hoe vaak de speler goedkoop eten heeft gegeten (getal). |
+| `[the] (omt\|openminetopia) fitness luxuryfood points of %player%` | Hoe vaak de speler luxe eten heeft gegeten (getal). |
+| `[the] (omt\|openminetopia) fitness drinking points of %player%` | De fitheid die de speler met drinken heeft verdiend (getal). |
+| `[the] (omt\|openminetopia) fitness kilometers walked of %player%` | De Minecraft-statistiek `WALK_ONE_CM` gedeeld door 1000 (getal). |
+| `[the] (omt\|openminetopia) fitness kilometers ran of %player%` | De Minecraft-statistiek `SPRINT_ONE_CM` gedeeld door 1000 (getal). |
+| `[the] (omt\|openminetopia) fitness kilometers swam of %player%` | De Minecraft-statistiek `SWIM_ONE_CM` gedeeld door 1000 (getal). |
+| `[the] (omt\|openminetopia) fitness kilometers flown of %player%` | De Minecraft-statistiek `AVIATE_ONE_CM` gedeeld door 1000 (getal). |
+
+<Note>
+  De vier `kilometers`-expressies delen centimeters door 1000. De uitkomst is dus in eenheden van 10 meter, niet in kilometers.
+</Note>
+
+Condities en events registreert OpenMinetopia niet.
+
+## Voorbeeld
+
+```
+command /mijnprefix:
+    trigger:
+        send "Je prefix is %omt current prefix of player%" to player
+
+command /strafbladen <player>:
+    trigger:
+        set {_ids::*} to omt criminalrecords of arg-1
+        send "%arg-1% heeft %size of {_ids::*}% regel(s) op het strafblad." to player
+```
+
+Meer over prefixen lees je op [Prefixen](/plugin/modules/prefixen). Meer over fitheid op [Fitheid](/plugin/modules/fitheid).

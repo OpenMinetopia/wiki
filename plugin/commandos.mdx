@@ -1,0 +1,457 @@
+---
+title: "Commando's en permissies"
+description: "Alle commando's van OpenMinetopia met hun aliassen, argumenten en permissies."
+icon: "terminal"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/modules/*/commands/** (alle klassen met @CommandAlias), modules/currencies/commands/CurrencyCommandHolder.java, modules/currencies/CurrencyModule.java, modules/currencies/configuration/CurrencyConfiguration.java, modules/portal/PortalModule.java, modules/*/*Module.java (registerComponent), configuration/DefaultConfiguration.java (isModuleDisabled, plot.commands-on-create, emergency.cooldown, bodysearch.range), modules/lock/utils/LockUtil.java, modules/police/handcuff/listeners/PlayerHandcuffListener.java, modules/police/walkietalkie/**, modules/staff/admintool/listeners/*, modules/staff/chat/listeners/PlayerChatListener.java, modules/books/BooksModule.java, modules/teleporter/utils/TeleporterUtil.java, src/main/resources/paper-plugin.yml, src/main/resources/default/currencies.yml, src/main/resources/default/messages.yml */}
+
+Op deze pagina staan alle commando's van OpenMinetopia, gegroepeerd per module. Onderaan vind je een lijst met alle permissies.
+
+## Zo lees je de tabellen
+
+- `<naam>` is een verplicht argument, `[naam]` is optioneel.
+- Staat er "Geen" bij de permissie, dan mag iedereen het commando gebruiken.
+- Een commando zonder argumenten dat alleen een helplijst toont, werkt ook als `<commando> help`. De helplijst toont alleen subcommando's waar je permissie voor hebt.
+- De meeste commando's werken alleen in-game. Deze werken ook vanuit de console: `/omt reload`, `/omt help`, `/rekening create`, `/rekening info`, `/rekening freeze`, `/rekening setbalance`, `/rekening adduser`, `/rekening removeuser`, `/currency purge-unused`, de valuta-commando's met een speler als argument, `/color add`, `/fitheid togglereset`, `/prefix add`, `/prefix remove` en `/112`. Ook de helplijsten (`<commando> help`) werken vanuit de console.
+
+<Note>
+Commando's bestaan alleen als hun module aan staat. Zet je een module uit met `disabled-modules` in `config.yml`, dan verdwijnen ook de commando's van die module. Zie [Configuratie](/plugin/configuratie).
+</Note>
+
+## Hoe permissies werken
+
+OpenMinetopia registreert zijn permissies nergens. `paper-plugin.yml` bevat geen permissies en de plugin maakt ook in de code geen permissies aan. Daardoor geldt de standaardregel van Bukkit voor onbekende permissies: alleen OP's hebben ze. De console heeft altijd alle permissies.
+
+Wil je een gewone speler een commando geven, dan geef je de permissie met een permissieplugin zoals LuckPerms.
+
+Een commando met permissie "Geen" werkt voor iedereen. Sommige van die commando's controleren in de code nog wel iets, bijvoorbeeld of je eigenaar bent van een plot. Dat staat dan in de tabel.
+
+## Algemeen
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/omt` | Toont de versie en de makers van de plugin. | Geen |
+| `/omt reload` | Herlaadt `config.yml`, `messages.yml`, `levelcheck.yml`, `colors.yml`, `fitness.yml`, `banking.yml`, `plotcalculate.yml`, `books.yml`, `labymod.yml` en de items. Bestanden van uitgeschakelde modules worden overgeslagen. | `openminetopia.reload` |
+| `/omt help [pagina]` | Toont de commando's van de plugin, 10 per pagina. De valuta-commando's staan er niet in. | `openminetopia.help` |
+
+Aliassen: `/openminetopia`, `/minetopia`, `/sdb`.
+
+## Bankieren
+
+Zie [Bankieren](/plugin/modules/bankieren).
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/rekening` | Toont de helplijst. | Geen |
+| `/rekening open` | Opent het bankmenu. | `openminetopia.banking.open` |
+| `/rekening list` | Opent een menu met alle rekeningen. | `openminetopia.banking.list` |
+| `/rekening create <type> <naam>` | Maakt een rekening aan. Type is `company`, `savings` of `government`. Een `private` rekening kun je niet aanmaken. | `openminetopia.banking.create` |
+| `/rekening delete <naam>` | Verwijdert een rekening. | `openminetopia.banking.delete` |
+| `/rekening info <naam>` | Toont naam, ID, bevroren-status, saldo en gebruikers van een rekening. | `openminetopia.banking.info` |
+| `/rekening freeze <naam>` | Bevriest een rekening, of ontdooit hem als hij al bevroren is. | `openminetopia.banking.freeze` |
+| `/rekening setbalance <naam> <bedrag>` | Zet het saldo van een rekening. Dit wordt gelogd als transactie van het type `SET`. | `openminetopia.banking.setbalance` |
+| `/rekening adduser <speler> <naam> <recht>` | Geeft een speler toegang tot een rekening. Recht is `DEPOSIT`, `WITHDRAW` of `ADMIN`. | `openminetopia.banking.adduser` |
+| `/rekening removeuser <speler> <naam>` | Haalt een speler van een rekening. | `openminetopia.banking.removeuser` |
+| `/transacties <naam>` | Opent het transactiemenu van een rekening. | `openminetopia.transactions` |
+
+Aliassen: `/rekening` is ook `/account` en `/accounts`. `/transacties` is ook `/transactions`.
+
+## Valuta
+
+Zie [Valuta](/plugin/modules/valuta).
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/currency purge-unused` | Verwijdert alle valuta uit de database die niet meer in `currencies.yml` staan. Typ het commando binnen 20 seconden een tweede keer om te bevestigen. | `openminetopia.currency.purge` |
+
+Alias: `/currencies`.
+
+Elke valuta in `currencies.yml` krijgt een eigen commando. De naam van het commando is de ID van de valuta, en de `aliases` uit `currencies.yml` werken ook. In de standaardconfig is dat `/graycoin` met alias `/gc`. Hieronder staat `<valuta>` voor die ID.
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/<valuta>` | Toont je eigen saldo van deze valuta. | Geen |
+| `/<valuta> help` | Toont de helplijst. Zonder permissie zie je niets. | `openminetopia.currency.<valuta>` |
+| `/<valuta> <speler>` | Toont het saldo van een andere speler. | `openminetopia.currency.info.<valuta>` |
+| `/<valuta> set <speler> <hoeveelheid>` | Zet het saldo van een speler. | `openminetopia.currency.set.<valuta>` |
+| `/<valuta> add <speler> <hoeveelheid>` | Telt een hoeveelheid op bij het saldo van een speler. | `openminetopia.currency.add.<valuta>` |
+| `/<valuta> remove <speler> <hoeveelheid>` | Haalt een hoeveelheid van het saldo van een speler af. | `openminetopia.currency.remove.<valuta>` |
+
+De speler moet al eens op de server zijn geweest. Elke andere combinatie van argumenten toont de helplijst.
+
+## Speeltijd
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/playtime` | Toont je eigen speeltijd. | Geen |
+| `/playtime <speler>` | Toont de speeltijd van een andere speler. Zonder permissie zie je je eigen speeltijd. | `openminetopia.playtime.others` |
+
+Aliassen: `/time`, `/ptime`.
+
+## Fitheid
+
+Zie [Fitheid](/plugin/modules/fitheid).
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/fitheid` | Toont de helplijst. | Geen |
+| `/fitheid reset` | Zet je fitheid terug. Dit mag alleen als iemand het voor je heeft aangezet met `/fitheid togglereset`. Daarna staat het weer uit. | Geen |
+| `/fitheid trigger` | Berekent je fitheid direct opnieuw. | `openminetopia.fitness.trigger` |
+| `/fitheid booster <speler> <hoeveelheid> [seconden]` | Geeft een online speler een fitheidsbooster. Zonder seconden, of met 0 of minder, is de booster permanent. | `openminetopia.fitness.booster` |
+| `/fitheid togglereset <speler> <true/false>` | Bepaalt of een speler `/fitheid reset` mag gebruiken. | `openminetopia.fitness.togglereset` |
+
+Alias: `/fitness`.
+
+## Prefixen
+
+Zie [Prefixen](/plugin/modules/prefixen).
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/prefix` | Opent je prefixmenu. | Geen |
+| `/prefix help` | Toont de helplijst. | Geen |
+| `/prefix menu [speler]` | Opent het prefixmenu van jezelf of van een andere speler. Voor een andere speler heb je een extra permissie nodig. | Geen, `openminetopia.prefix.menu.others` voor een andere speler |
+| `/prefix add <speler> <minuten> <prefix>` | Geeft een speler een prefix en maakt hem meteen actief. Gebruik `-1` minuten voor een prefix die nooit verloopt. | `openminetopia.prefix.add` |
+| `/prefix remove <speler> <prefix>` | Haalt een prefix weg bij een speler. | `openminetopia.prefix.remove` |
+
+## Kleuren
+
+Zie [Kleuren](/plugin/modules/kleuren).
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/color` | Opent het kleurenmenu. | Geen |
+| `/color help` | Toont de helplijst. | Geen |
+| `/prefixkleur` | Opent het menu om je prefixkleur te kiezen. | Geen |
+| `/chatkleur` | Opent het menu om je chatkleur te kiezen. | Geen |
+| `/naamkleur` | Opent het menu om je naamkleur te kiezen. | Geen |
+| `/levelkleur` | Opent het menu om je levelkleur te kiezen. | Geen |
+| `/color add <speler> <type> <kleur> [minuten]` | Geeft een speler een kleur. De kleur wordt niet meteen actief: de actieve kleur van dat type gaat terug naar de standaardkleur, en de speler kiest de nieuwe kleur zelf in het menu. Type is `PREFIX`, `CHAT`, `NAME` of `LEVEL`. Zonder minuten verloopt de kleur nooit. | `openminetopia.color.add` |
+| `/color remove <speler> <type> <kleur>` | Haalt een kleur weg bij een speler. | `openminetopia.color.remove` |
+| `/color create <id> <weergavenaam> <kleurcode>` | Voegt een nieuwe kleur toe aan `colors.yml`. | `openminetopia.color.create` |
+
+Aliassen: `/prefixcolor`, `/chatcolor`, `/namecolor` en `/levelcolor` werken ook.
+
+## Scoreboard en actionbar
+
+Zie [Scoreboard en actionbar](/plugin/modules/scoreboard-actionbar).
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/scoreboard` | Zet je scoreboard aan of uit. | Geen |
+| `/actionbar` | Zet je actionbar aan of uit. | Geen |
+
+Aliassen: `/sb` en `/ab`. `/scoreboard` bestaat alleen als `scoreboard.enabled` in `config.yml` op `true` staat. Dat is de standaard.
+
+## Plaatsen
+
+Zie [Plaatsen](/plugin/modules/plaatsen).
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/mtwereld` | Toont de helplijst. | `openminetopia.world` |
+| `/mtwereld create <laadnaam>` | Registreert de wereld waar je in staat. De titel wordt `<bold>` plus de laadnaam in hoofdletters, de kleur `<gold>` en de temperatuur 21.64. | `openminetopia.world.create` |
+| `/mtwereld remove <wereld>` | Verwijdert een geregistreerde wereld. | `openminetopia.world.remove` |
+| `/mtwereld setcolor <wereld> <kleur>` | Zet de kleur van een wereld. | `openminetopia.world.setcolor` |
+| `/mtwereld settemperature <wereld> <temperatuur>` | Zet de temperatuur van een wereld. | `openminetopia.world.settemperature` |
+| `/mtwereld setloadingname <wereld> <laadnaam>` | Zet de laadnaam van een wereld. | `openminetopia.world.setloadingname` |
+| `/mtwereld settitle <wereld> <titel>` | Zet de titel van een wereld. | `openminetopia.world.settitle` |
+| `/mtstad` | Toont de helplijst. | `openminetopia.city` |
+| `/mtstad create <regio> <laadnaam>` | Maakt een stad van een bestaande WorldGuard-regio in je huidige wereld. Die wereld moet geregistreerd zijn. | `openminetopia.city.create` |
+| `/mtstad remove <stad>` | Verwijdert een stad. | `openminetopia.city.remove` |
+| `/mtstad setcolor <stad> <kleur>` | Zet de kleur van een stad. | `openminetopia.city.setcolor` |
+| `/mtstad settemperature <stad> <temperatuur>` | Zet de temperatuur van een stad. | `openminetopia.city.settemperature` |
+| `/mtstad setloadingname <stad> <laadnaam>` | Zet de laadnaam van een stad. | `openminetopia.city.setloadingname` |
+| `/mtstad settitle <stad> <titel>` | Zet de titel van een stad. | `openminetopia.city.settitle` |
+
+Aliassen: `/mtworld` en `/mtcity`.
+
+<Info>
+De permissies `openminetopia.world` en `openminetopia.city` horen alleen bij de helplijst. Voor de subcommando's heb je alleen hun eigen permissie nodig.
+</Info>
+
+## Plots
+
+Zie [Plots](/plugin/modules/plots).
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/plot` | Toont de helplijst. | Geen |
+| `/plotinfo` | Toont eigenaren, leden en beschrijving van de plot waar je staat. | Geen |
+| `/plot create <naam> [topToDown]` | Maakt een plot van je WorldEdit-selectie. Met `topToDown` op `true` (standaard) loopt de plot van de bodem tot de top van de wereld. Daarna voert de console de commando's uit `plot.commands-on-create` in `config.yml` uit. | `openminetopia.plot.create` |
+| `/plot delete <naam>` | Verwijdert een plot in je huidige wereld. | `openminetopia.plot.delete` |
+| `/plot description <beschrijving> [plot]` | Zet de beschrijving van de plot waar je staat, of van de opgegeven plot. De beschrijving is één woord. Gebruik `remove`, `delete` of `null` om hem weg te halen. | `openminetopia.plot.description` |
+| `/plot list [pagina]` | Toont alle plots in je huidige wereld, 15 per pagina. | `openminetopia.plot.list` |
+| `/plot plist <speler> [pagina]` | Toont de plots in je huidige wereld waar een speler eigenaar of lid van is. | `openminetopia.plot.plist` |
+| `/plot addmember <speler> [plot]` | Voegt een lid toe aan de plot waar je staat, of aan de opgegeven plot. Je moet eigenaar van de plot zijn of de permissie hebben. | Geen, of `openminetopia.plot.removemember` als je geen eigenaar bent |
+| `/plot removemember <speler> [plot]` | Haalt een lid van een plot. Je moet eigenaar van de plot zijn of de permissie hebben. | Geen, of `openminetopia.plot.removemember` als je geen eigenaar bent |
+| `/plot addowner <speler> [plot]` | Maakt een speler eigenaar van een plot. Was hij lid, dan wordt hij als lid verwijderd. | `openminetopia.plot.addowner` |
+| `/plot removeowner <speler> [plot]` | Haalt een eigenaar van een plot. | `openminetopia.plot.removeowner` |
+| `/plot clear` | Haalt alle eigenaren en leden van de plot waar je staat. | `openminetopia.plot.clear` |
+| `/plot tp <naam>` | Teleporteert je naar het midden van een plot in je huidige wereld. | `openminetopia.plot.tp` |
+| `/plot transfer <true/false>` | Bepaalt of de plot waar je staat overgedragen mag worden via het portaal. | `openminetopia.plot.tranfer` |
+| `/plot calculate [plot]` | Berekent de prijs van de plot waar je staat, of van de opgegeven plot. Je ziet de totaalprijs, plotprijs, bouwprijs, bouwersloon en oppervlakte. | `openminetopia.plot.calculate` |
+
+Aliassen: `/plot` is ook `/p`. `/plotinfo` is ook `/pi`. `/plot tp` is ook `/plot teleport`.
+
+## Teleporters
+
+Zie [Teleporters](/plugin/modules/teleporters).
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/teleporter` | Toont de helplijst. | `openminetopia.teleporter` |
+| `/teleporter create [plaat] [display] [roundYaw]` | Geeft je een drukplaat met je huidige positie als bestemming. | `openminetopia.teleporter.create` |
+
+Uitleg van de argumenten:
+
+- `plaat`: het soort drukplaat, bijvoorbeeld `OAK_PRESSURE_PLATE`. Standaard `STONE_PRESSURE_PLATE`.
+- `display`: zet een tekst boven de geplaatste plaat. Standaard `true`.
+- `roundYaw`: rondt je kijkrichting af op 45 graden. Standaard `false`.
+
+## Sloten
+
+Zie [Sloten](/plugin/modules/sloten).
+
+Voor `/lock` en `/unlock` kijk je naar het blok, op maximaal 5 blokken afstand. Zonder extra permissie moet dat blok op een plot staan waar jij eigenaar van bent.
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/lock` | Vergrendelt het blok waar je naar kijkt. Jij wordt de eigenaar. | Geen, `openminetopia.lock` om het plot-eigenaarschap over te slaan |
+| `/lock addmember <speler>` | Geeft een speler toegang tot het slot. | Geen, `openminetopia.lock` om het plot-eigenaarschap over te slaan |
+| `/lock removemember <speler>` | Haalt de toegang van een speler weg. | Geen, `openminetopia.lock` om het plot-eigenaarschap over te slaan |
+| `/lock setowner <speler>` | Maakt een andere speler eigenaar van het slot. | `openminetopia.lock.setowner` |
+| `/lock addgroup <groep>` | Geeft een groep toegang tot het slot. | `openminetopia.lock.group` |
+| `/lock removegroup <groep>` | Haalt de toegang van een groep weg. | `openminetopia.lock.group` |
+| `/unlock` | Haalt het slot van het blok waar je naar kijkt. | Geen, `openminetopia.unlock` om het plot-eigenaarschap over te slaan |
+| `/sleutel` | Toont hoe je het commando gebruikt. | `openminetopia.key` |
+| `/sleutel alle` | Maakt een loper die op alle sloten past. | `openminetopia.key` |
+| `/sleutel slot` | Voegt het slot waar je naar kijkt toe aan een sleutel. | `openminetopia.key` |
+| `/sleutel plot` | Voegt de plot waar je staat toe aan een sleutel. | `openminetopia.key` |
+
+Heb je al een sleutel in je hand, dan past `/sleutel` die sleutel aan. Anders krijg je een nieuwe sleutel.
+
+Aliassen: `/sleutel` is ook `/key`. `/sleutel alle` is ook `/sleutel all` en `/sleutel master`. `/sleutel slot` is ook `/sleutel lock`.
+
+## Politie
+
+Zie [Politie](/plugin/modules/politie).
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/112 <bericht>` | Stuurt een noodmelding met je naam en positie naar spelers met `openminetopia.police`. Je kunt dit één keer per `emergency.cooldown` seconden doen (standaard 300). Vanuit de console is de melding anoniem. | Geen |
+| `/fouilleer <speler>` | Opent de inventaris van een online speler binnen `bodysearch.range` blokken (standaard 10). | `openminetopia.bodysearch` |
+| `/strafblad` | Toont de helplijst. | Geen |
+| `/strafblad add <speler> <omschrijving>` | Voegt een regel toe aan het strafblad van een speler. | `openminetopia.criminalrecord.add` |
+| `/strafblad remove <speler> <id>` | Verwijdert een regel van het strafblad. | `openminetopia.criminalrecord.remove` |
+| `/strafblad info <speler>` | Toont het strafblad van een speler, met ID, omschrijving, agent en datum. | `openminetopia.criminalrecord.info` |
+
+<Warning>
+In de huidige versie stopt `/112` met versturen zodra het een online speler zonder `openminetopia.police` tegenkomt. Daardoor krijgen niet altijd alle agenten de melding.
+</Warning>
+
+Aliassen: `/112` is ook `/911`. `/fouilleer` is ook `/bodysearch`. `/strafblad` is ook `/criminalrecord`.
+
+## Staff
+
+Zie [Staff](/plugin/modules/staff).
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/mod` | Toont de helplijst. | Geen |
+| `/mod setlevel <speler> <level>` | Zet het level van een online speler. | `openminetopia.mod.setlevel` |
+| `/mod chatspy` | Zet ChatSpy aan of uit. | `openminetopia.mod.chatspy` |
+| `/mod commandspy` | Zet CommandSpy aan of uit. | `openminetopia.mod.commandspy` |
+| `/admintool` | Toont de helplijst. | `openminetopia.admintool` |
+| `/admintool krijg` | Geeft je het AdminTool-item (een Nether Star). | `openminetopia.admintool.get` |
+| `/admintool open <speler>` | Opent het AdminTool-menu van een speler. | `openminetopia.admintool.open` |
+| `/staffchat` | Zet staffchat aan of uit. Staat het aan, dan gaan je chatberichten naar de staffchat. | `openminetopia.staffchat` |
+| `/staffchat <bericht>` | Stuurt één bericht naar de staffchat. | `openminetopia.staffchat` |
+
+Aliassen: `/staffchat` is ook `/staffc` en `/sc`.
+
+## Items
+
+Zie [Items](/plugin/modules/items).
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/items` | Opent het menu met itemcategorieën. | `openminetopia.items` |
+| `/items get <namespace:item>` | Geeft je een item, bijvoorbeeld `namespace:item_naam`. | `openminetopia.items.get` |
+
+Aliassen: `/ddgitems`, `/mtitems`, `/minetopiaitems`.
+
+## Rugzakken
+
+Zie [Rugzakken](/plugin/modules/rugzakken).
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/rugzak get <namespace:item> [rijen]` | Geeft je een rugzak op basis van een item uit de items-module. Rijen is 1 tot 6, standaard 3. | `openminetopia.backpack.get` |
+| `/rugzak make [rijen]` | Maakt een rugzak van het item in je hand. Het moet één los item zijn. Rijen is 1 tot 6, standaard 3. | `openminetopia.backpack.make` |
+| `/rugzak title <titel>` | Zet de titel van de rugzak in je hand. | `openminetopia.backpack.title` |
+| `/rugzak resettitle` | Haalt de titel van de rugzak in je hand weg. | `openminetopia.backpack.title` |
+
+Alias: `/backpack`.
+
+## Boeken
+
+Zie [Boeken](/plugin/modules/boeken).
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/boek krijg <boek>` | Geeft je een boek uit `books.yml`. Heeft het boek variabelen, dan vraagt de plugin die eerst in de chat. | `openminetopia.books.<boek>` |
+
+Aliassen: `/book`, `/boeken`, `/books`. `/boek krijg` is ook `/boek get`.
+
+## Overig
+
+Zie [Overig](/plugin/modules/overig).
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/head` | Zet het item in je hand op je hoofd, als het op de whitelist staat. | Geen |
+| `/head add` | Zet het item in je hand op de whitelist. | `openminetopia.head.add` |
+| `/head remove` | Haalt het item in je hand van de whitelist. | `openminetopia.head.remove` |
+
+## Portaal
+
+Zie [Koppelen met het portaal](/portaal/koppelen).
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/koppel <token>` | Koppelt je Minecraft-account aan je account op het portaal. | Geen |
+
+Alias: `/link`.
+
+<Warning>
+`/koppel` bestaat alleen als `portal.enabled` in `config.yml` op `true` staat. Standaard is dat `false`.
+</Warning>
+
+## Permissies buiten commando's
+
+Deze permissies controleert de plugin op andere plekken dan bij het starten van een commando.
+
+| Permissie | Wat het geeft |
+|---|---|
+| `openminetopia.lock.bypass` | Elk vergrendeld blok openen. |
+| `group.<groep>` | Een slot openen waar `<groep>` aan is toegevoegd met `/lock addgroup`. |
+| `openminetopia.lock` | `/lock` en alle subcommando's ervan gebruiken op blokken buiten je eigen plot. |
+| `openminetopia.unlock` | `/unlock` gebruiken op blokken buiten je eigen plot. |
+| `openminetopia.plot.removemember` | Leden toevoegen en verwijderen bij plots waar je geen eigenaar van bent. |
+| `openminetopia.playtime.others` | Met `/playtime <speler>` de speeltijd van een ander zien. |
+| `openminetopia.prefix.menu.others` | Met `/prefix menu <speler>` het prefixmenu van een ander openen. |
+| `openminetopia.currency.<valuta>` | De helplijst en tab-aanvulling van een valuta-commando zien. |
+| `openminetopia.books.<boek>` | Een boek krijgen. Ook de tab-aanvulling van `/boek krijg` toont alleen boeken waar je deze permissie voor hebt. |
+| `openminetopia.police` | Noodmeldingen van `/112` ontvangen. |
+| `openminetopia.handcuff` | Een speler boeien of losmaken door met handboeien op hem te klikken. |
+| `openminetopia.walkietalkie` | De portofoon gebruiken, berichten van de portofoon ontvangen en in de contactenlijst van de portofoon staan. |
+| `openminetopia.staffchat` | Staffchat-berichten ontvangen en via de chat naar de staffchat praten. |
+| `openminetopia.admintool` | Het AdminTool-item gebruiken: linksklikken voor je eigen menu, rechtsklikken op een speler voor zijn menu. |
+
+## Alle permissies
+
+Dit is de volledige lijst met permissies die in de code van OpenMinetopia voorkomen. `<valuta>`, `<boek>` en `<groep>` vervang je door de ID van de valuta, het boek of de groep.
+
+<AccordionGroup>
+  <Accordion title="Algemeen, bankieren en valuta">
+    - `openminetopia.reload`
+    - `openminetopia.help`
+    - `openminetopia.banking.open`
+    - `openminetopia.banking.list`
+    - `openminetopia.banking.create`
+    - `openminetopia.banking.delete`
+    - `openminetopia.banking.info`
+    - `openminetopia.banking.freeze`
+    - `openminetopia.banking.setbalance`
+    - `openminetopia.banking.adduser`
+    - `openminetopia.banking.removeuser`
+    - `openminetopia.transactions`
+    - `openminetopia.currency.purge`
+    - `openminetopia.currency.<valuta>`
+    - `openminetopia.currency.info.<valuta>`
+    - `openminetopia.currency.set.<valuta>`
+    - `openminetopia.currency.add.<valuta>`
+    - `openminetopia.currency.remove.<valuta>`
+  </Accordion>
+  <Accordion title="Spelers">
+    - `openminetopia.playtime.others`
+    - `openminetopia.fitness.trigger`
+    - `openminetopia.fitness.booster`
+    - `openminetopia.fitness.togglereset`
+    - `openminetopia.prefix.add`
+    - `openminetopia.prefix.remove`
+    - `openminetopia.prefix.menu.others`
+    - `openminetopia.color.add`
+    - `openminetopia.color.remove`
+    - `openminetopia.color.create`
+  </Accordion>
+  <Accordion title="Wereld">
+    - `openminetopia.world`
+    - `openminetopia.world.create`
+    - `openminetopia.world.remove`
+    - `openminetopia.world.setcolor`
+    - `openminetopia.world.settemperature`
+    - `openminetopia.world.setloadingname`
+    - `openminetopia.world.settitle`
+    - `openminetopia.city`
+    - `openminetopia.city.create`
+    - `openminetopia.city.remove`
+    - `openminetopia.city.setcolor`
+    - `openminetopia.city.settemperature`
+    - `openminetopia.city.setloadingname`
+    - `openminetopia.city.settitle`
+    - `openminetopia.plot.create`
+    - `openminetopia.plot.delete`
+    - `openminetopia.plot.description`
+    - `openminetopia.plot.list`
+    - `openminetopia.plot.plist`
+    - `openminetopia.plot.addowner`
+    - `openminetopia.plot.removeowner`
+    - `openminetopia.plot.removemember`
+    - `openminetopia.plot.clear`
+    - `openminetopia.plot.tp`
+    - `openminetopia.plot.tranfer`
+    - `openminetopia.plot.calculate`
+    - `openminetopia.teleporter`
+    - `openminetopia.teleporter.create`
+    - `openminetopia.lock`
+    - `openminetopia.lock.setowner`
+    - `openminetopia.lock.group`
+    - `openminetopia.lock.bypass`
+    - `openminetopia.unlock`
+    - `openminetopia.key`
+    - `group.<groep>`
+  </Accordion>
+  <Accordion title="Politie en staff">
+    - `openminetopia.police`
+    - `openminetopia.bodysearch`
+    - `openminetopia.criminalrecord.add`
+    - `openminetopia.criminalrecord.remove`
+    - `openminetopia.criminalrecord.info`
+    - `openminetopia.handcuff`
+    - `openminetopia.walkietalkie`
+    - `openminetopia.mod.setlevel`
+    - `openminetopia.mod.chatspy`
+    - `openminetopia.mod.commandspy`
+    - `openminetopia.admintool`
+    - `openminetopia.admintool.get`
+    - `openminetopia.admintool.open`
+    - `openminetopia.staffchat`
+  </Accordion>
+  <Accordion title="Items en extra's">
+    - `openminetopia.items`
+    - `openminetopia.items.get`
+    - `openminetopia.backpack.get`
+    - `openminetopia.backpack.make`
+    - `openminetopia.backpack.title`
+    - `openminetopia.books.<boek>`
+    - `openminetopia.head.add`
+    - `openminetopia.head.remove`
+  </Accordion>
+</AccordionGroup>
+
+<Note>
+`openminetopia.plot.tranfer` staat zo in de code, zonder de tweede "s". Gebruik deze spelling als je de permissie geeft.
+</Note>

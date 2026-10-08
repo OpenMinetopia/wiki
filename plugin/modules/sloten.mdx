@@ -1,0 +1,112 @@
+---
+title: "Sloten"
+description: "Vergrendel deuren, kisten en andere blokken, en geef spelers toegang met leden, groepen of sleutels."
+icon: "lock"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/modules/lock/ (LockModule.java, commands/LockCommand.java, commands/UnlockCommand.java, commands/KeyCommand.java, listeners/LockInteractListener.java, listeners/LockPlaceListener.java, utils/LockUtil.java, utils/KeyUtil.java), src/main/java/nl/openminetopia/utils/WorldGuardUtils.java, src/main/java/nl/openminetopia/configuration/DefaultConfiguration.java, src/main/resources/default/messages.yml */}
+
+Met sloten vergrendel je blokken zoals deuren en kisten. Alleen de eigenaar van het slot en spelers die hij toegang geeft kunnen het blok dan openen. Toegang geef je aan losse spelers, aan een permissiegroep of met een sleutel.
+
+## Wat je kunt vergrendelen
+
+- deuren, ook dubbele deuren;
+- valluiken;
+- poorten (fence gates);
+- kisten, ook dubbele kisten;
+- staande bordjes;
+- ovens.
+
+<Note>
+  Tonnen (barrels) staan in de code als vergrendelbaar, maar door een fout in de controle kun je ze niet vergrendelen.
+</Note>
+
+Bij een deur worden beide helften vergrendeld. Staat er een tweede deur naast die een dubbele deur vormt, dan krijgt die hetzelfde slot. Dat gebeurt ook als je die tweede deur later plaatst. Bij een dubbele kist worden beide helften vergrendeld.
+
+## Een slot plaatsen
+
+Kijk naar het blok, op maximaal 5 blokken afstand, en typ `/lock`. Je wordt de eigenaar van het slot.
+
+Je kunt alleen blokken vergrendelen op een plot waar jij eigenaar van bent. Daarbij telt de WorldGuard-regio met de hoogste prioriteit op de plek van het blok. Of die regio de plot-flag heeft, wordt niet gecontroleerd. Spelers met `openminetopia.lock` mogen overal sloten plaatsen en beheren. Hetzelfde geldt voor `/unlock` met `openminetopia.unlock`.
+
+## Wie een slot kan openen
+
+Klik met rechts op een vergrendeld blok. Je mag het openen als:
+
+- je de eigenaar van het slot bent;
+- je lid bent van het slot;
+- je in een groep zit die aan het slot is toegevoegd;
+- je een sleutel in je hoofdhand hebt die op het slot past;
+- je `openminetopia.lock.bypass` hebt.
+
+Mag je het niet openen, dan krijg je een melding en gebeurt er niets. Mag je het wel, dan zie je van wie het slot is.
+
+IJzeren deuren en ijzeren valluiken met een slot open je gewoon met de hand. Bij een dubbele deur gaan beide deuren tegelijk open en dicht.
+
+### Groepen
+
+Een groep op een slot geeft toegang aan iedereen met de permissie `group.<groep>`. Met LuckPerms heeft elk lid van een groep die permissie al. Zo geef je bijvoorbeeld de hele politie toegang tot een deur met `/lock addgroup politie`.
+
+## Commando's
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/lock` | Vergrendelt het blok waar je naar kijkt. | Geen |
+| `/lock addmember <speler>` | Geeft een speler toegang tot het slot. | Geen |
+| `/lock removemember <speler>` | Haalt de toegang van een speler weg. | Geen |
+| `/lock addgroup <groep>` | Geeft een groep toegang tot het slot. | `openminetopia.lock.group` |
+| `/lock removegroup <groep>` | Haalt de toegang van een groep weg. | `openminetopia.lock.group` |
+| `/lock setowner <speler>` | Maakt een andere speler eigenaar van het slot. | `openminetopia.lock.setowner` |
+| `/unlock` | Haalt het slot van het blok waar je naar kijkt. | Geen |
+| `/sleutel` | Toont hoe je het commando gebruikt. | `openminetopia.key` |
+| `/sleutel alle` | Geeft een hoofdsleutel die op elk slot past. | `openminetopia.key` |
+| `/sleutel slot` | Voegt het slot waar je naar kijkt toe aan een sleutel. | `openminetopia.key` |
+| `/sleutel plot` | Voegt het plot waar je staat toe aan een sleutel. | `openminetopia.key` |
+
+Alle `/lock`-commando's en `/unlock` gaan over het blok waar je naar kijkt. Ze werken alleen op een plot waar jij eigenaar van bent, tenzij je `openminetopia.lock` hebt (voor `/unlock`: `openminetopia.unlock`). Bij `/lock addmember`, `/lock removemember` en `/lock setowner` moet de speler al eens op de server zijn geweest. Jezelf als lid toevoegen kan niet.
+
+De alias van `/sleutel` is `/key`. `/sleutel alle` werkt ook als `/sleutel all` en `/sleutel master`. `/sleutel slot` werkt ook als `/sleutel lock`.
+
+## Sleutels
+
+Een sleutel is een item dat sloten opent als je hem in je hand hebt. Er zijn drie soorten toegang, die je op één sleutel kunt combineren:
+
+- **Hoofdsleutel** (`/sleutel alle`): past op elk slot.
+- **Slot** (`/sleutel slot`): past op het vergrendelde blok waar je naar keek, op maximaal 5 blokken afstand.
+- **Plot** (`/sleutel plot`): past op elk vergrendeld blok in die WorldGuard-regio.
+
+<Warning>
+  `/sleutel` controleert niet of het slot of plot van jou is. Geef `openminetopia.key` daarom alleen aan staff.
+</Warning>
+
+Heb je een sleutel in je hoofdhand als je het commando typt, dan wordt die sleutel aangevuld. Anders krijg je een nieuwe sleutel in je inventory. De lore van de sleutel laat zien waar hij op past.
+
+## Configuratie
+
+Het uiterlijk van de sleutel stel je in `config.yml` in.
+
+```yaml
+key:
+  type: PAPER
+  custom-model-data: -1
+  item-model: minecraft:custom/items/sleutel
+  name: <gold>Sleutel
+  lore:
+  - <gray>Een sleutel om sloten mee te openen.
+  lore-master: '<gray>Past op: <green>alle sloten'
+  lore-blocks: '<gray>Vergrendelde blokken: <white><amount>'
+  lore-plot: '<gray>Plot: <white><plot>'
+```
+
+| Sleutel | Standaard | Wat het doet |
+|---|---|---|
+| `type` | `PAPER` | Het item van de sleutel. |
+| `custom-model-data` | `-1` | Custom model data voor een eigen model. `-1` betekent geen. |
+| `item-model` | `minecraft:custom/items/sleutel` | Het item model uit je resourcepack. Laat leeg (`''`) om geen item model te zetten. |
+| `name` | `<gold>Sleutel` | De naam van de sleutel. |
+| `lore` | Eén regel | De vaste regels in de lore. |
+| `lore-master` | `<gray>Past op: <green>alle sloten` | Extra regel op een hoofdsleutel. |
+| `lore-blocks` | `<gray>Vergrendelde blokken: <white><amount>` | Extra regel met het aantal blokken waar de sleutel op past. |
+| `lore-plot` | `<gray>Plot: <white><plot>` | Extra regel per plot waar de sleutel op past. |
+
+De naam en het item gelden voor nieuwe sleutels. De lore wordt ook bijgewerkt als je een bestaande sleutel aanvult. De meeste meldingen van sloten en sleutels staan in `messages.yml` onder de sleutels die beginnen met `lock_` en `key_`.

@@ -1,0 +1,47 @@
+---
+title: "Tijd"
+description: "Laat de tijd in je werelden gelijklopen met de echte klok."
+icon: "clock"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/modules/time/ (TimeModule.java, tasks/TimeSyncRunnable.java), src/main/java/nl/openminetopia/configuration/DefaultConfiguration.java, src/main/java/nl/openminetopia/modules/places/PlacesModule.java */}
+
+De tijdmodule zet de tijd in je werelden gelijk met de echte tijd. Is het 's avonds laat in Nederland, dan is het ook nacht op je server.
+
+## Hoe het werkt
+
+Elke 10 seconden zet de plugin de tijd van elke geregistreerde wereld op de echte tijd in de ingestelde tijdzone. Het gaat alleen om werelden die je hebt geregistreerd met `/mtwereld create`. Zie [Steden en werelden](/plugin/modules/plaatsen).
+
+De echte tijd wordt zo omgerekend naar de Minecraft-tijd:
+
+| Echte tijd | Minecraft |
+|---|---|
+| 06:00 | Zonsopkomst |
+| 12:00 | Middag |
+| 18:00 | Zonsondergang |
+| 00:00 | Middernacht |
+
+## Configuratie
+
+De instellingen staan in `config.yml`.
+
+```yaml
+timesync:
+  enabled: true
+  timezone: Europe/Amsterdam
+```
+
+| Sleutel | Standaard | Wat het doet |
+|---|---|---|
+| `timesync.enabled` | `true` | Zet de tijdsynchronisatie aan of uit. |
+| `timesync.timezone` | `Europe/Amsterdam` | De tijdzone van de echte klok, bijvoorbeeld `Europe/Brussels`. |
+
+De plugin kijkt alleen bij het opstarten naar `timesync.enabled`. Herstart je server nadat je het aanpast.
+
+<Tip>
+  De plugin zet de tijd elke 10 seconden opnieuw. Zie je de zon tussendoor verschuiven? Zet dan in die wereld de gamerule voor de dag-nachtcyclus uit.
+</Tip>
+
+<Warning>
+  Is een geregistreerde wereld niet geladen, dan stopt de plugin bij die wereld. Werelden die daarna in de lijst staan, krijgen dan geen nieuwe tijd.
+</Warning>

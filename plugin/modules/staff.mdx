@@ -1,0 +1,98 @@
+---
+title: "Staff"
+description: "De AdminTool, staffchat, ChatSpy, CommandSpy en het aanpassen van levels."
+icon: "user-shield"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/modules/staff/ (StaffModule.java, admintool/*, chat/*, mod/*), src/main/java/nl/openminetopia/modules/chat/utils/SpyUtils.java, src/main/java/nl/openminetopia/modules/chat/listeners/PlayerChatListener.java, src/main/java/nl/openminetopia/modules/chat/listeners/PlayerCommandListener.java, src/main/java/nl/openminetopia/configuration/DefaultConfiguration.java, src/main/resources/default/messages.yml */}
+
+De staffmodule geeft je team gereedschap om spelers te beheren en mee te kijken. Je opent spelergegevens met de AdminTool, praat onderling in de staffchat en leest chat en commando's mee.
+
+De modulenaam voor `disabled-modules` in `config.yml` is `staff`.
+
+## Commando's
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/admintool` | Toont de hulp van `/admintool`. | `openminetopia.admintool` |
+| `/admintool krijg` | Geeft je het AdminTool-item. | `openminetopia.admintool.get` |
+| `/admintool open <speler>` | Opent het beheerscherm van een speler, ook als die offline is. | `openminetopia.admintool.open` |
+| `/staffchat [bericht]` | Zonder bericht: zet de staffchat aan of uit. Met bericht: stuurt één bericht naar de staffchat. | `openminetopia.staffchat` |
+| `/mod setlevel <speler> <level>` | Zet het level van een online speler. | `openminetopia.mod.setlevel` |
+| `/mod chatspy` | Zet ChatSpy aan of uit. | `openminetopia.mod.chatspy` |
+| `/mod commandspy` | Zet CommandSpy aan of uit. | `openminetopia.mod.commandspy` |
+
+<Info>
+  Aliassen voor `/staffchat`: `/staffc` en `/sc`. Typ je alleen `/mod`, dan zie je de hulp.
+</Info>
+
+## AdminTool
+
+De AdminTool is een netherster. Je krijgt hem met `/admintool krijg`.
+
+- Klik met links om je eigen beheerscherm te openen.
+- Klik met rechts op een speler om zijn beheerscherm te openen.
+
+Voor allebei heb je `openminetopia.admintool` nodig. Gooi je de AdminTool weg, dan verdwijnt hij.
+
+Met `/admintool open <speler>` open je hetzelfde scherm zonder het item. Dat werkt ook voor offline spelers, zolang ze al eens op de server zijn geweest.
+
+### Het beheerscherm
+
+Het scherm **Beheerscherm** heeft deze knoppen:
+
+- **Minetopia Informatie**: opent het informatiescherm van de speler.
+- **Enderchest**: opent de enderchest van de speler. Deze knop zie je alleen als de speler online is.
+
+In het informatiescherm vind je:
+
+- **Profielinformatie**: UUID, naam, prefix en online tijd.
+- **Prefix**: kies de actieve prefix van de speler.
+- **Kleuren**: kies de kleuren van de speler.
+- **Level**: klik met rechts om het level met 1 te verhogen, met links om het met 1 te verlagen.
+- **Fitheid**: bekijk de fitheid per onderdeel en de boosters. Klik op een booster om hem te verwijderen. Deze knop zie je alleen als de module `fitness` aan staat.
+- **Banksaldo**: opent de privérekening van de speler. Heeft de speler geen rekening, dan zie je een barrière.
+- **Terug**: terug naar het beheerscherm.
+
+## Staffchat
+
+Typ `/staffchat` om de staffchat aan te zetten. Alles wat je daarna in de chat typt, gaat naar alle online spelers met `openminetopia.staffchat` en naar de console. Typ `/staffchat` opnieuw om hem uit te zetten.
+
+Wil je maar één bericht sturen? Gebruik dan `/staffchat <bericht>`.
+
+Of de staffchat aan staat, wordt per speler opgeslagen. Verliest een speler de permissie, dan zet de plugin zijn staffchat uit zodra hij iets in de chat typt.
+
+Het formaat staat in `staff_chat_format` in `messages.yml`. Je kunt daar `<player>`, `<world_name>` en `<message>` gebruiken.
+
+## ChatSpy en CommandSpy
+
+Met `/mod chatspy` zie je chatberichten van spelers die buiten jouw chatbereik staan. Het bereik is `chat.radius.range` uit [Chat](/plugin/modules/chat). Berichten van spelers in een andere wereld zie je ook.
+
+Met `/mod commandspy` zie je elk commando dat andere spelers uitvoeren.
+
+Beide instellingen worden per speler opgeslagen. De formaten staan in `chat_chatspy_format` en `chat_commandspy_format` in `messages.yml`.
+
+### Discord-webhooks
+
+Je kunt chat en commando's ook naar een Discord-kanaal sturen. Maak in Discord een webhook aan en zet de URL in `config.yml`:
+
+```yaml
+spy:
+  chat-spy-webhook: ''
+  command-spy-webhook: ''
+```
+
+| Sleutel | Standaard | Betekenis |
+|---|---|---|
+| `spy.chat-spy-webhook` | `''` | Webhook-URL voor chatberichten. Leeg betekent uit. |
+| `spy.command-spy-webhook` | `''` | Webhook-URL voor commando's. Leeg betekent uit. |
+
+Elk bericht komt als embed binnen, met de naam en het hoofd van de speler.
+
+<Warning>
+  De command-webhook krijgt echt elk commando van elke speler. Gebruik je een loginplugin met commando's zoals `/login`, dan komen die ook in Discord terecht.
+</Warning>
+
+## Level aanpassen
+
+Met `/mod setlevel <speler> <level>` zet je het level van een speler direct. De speler moet online zijn. Meer over levels lees je op [Levels](/plugin/modules/levels).

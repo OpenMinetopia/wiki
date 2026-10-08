@@ -1,0 +1,262 @@
+---
+title: "Politie"
+description: "Handboeien, taser, pepperspray, fouilleren, strafbladen, 112-meldingen en de portofoon."
+icon: "shield-halved"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/modules/police/ (PoliceModule.java, commands/*, handcuff/*, listeners/*, taser/TaserManager.java, utils/*, walkietalkie/*, models/CriminalRecordModel.java), src/main/java/nl/openminetopia/configuration/DefaultConfiguration.java, src/main/java/nl/openminetopia/utils/config/ConfigUtils.java, src/main/java/nl/openminetopia/utils/item/ItemUtils.java, src/main/java/nl/openminetopia/modules/misc/listeners/PlayerAttackListener.java, src/main/resources/default/messages.yml */}
+
+De politiemodule geeft agenten hun uitrusting en commando's. De meeste spullen zijn gewone Minecraft-items die je in `config.yml` aanwijst. Wie zo'n item vasthoudt en op een speler klikt, gebruikt het.
+
+De modulenaam voor `disabled-modules` in `config.yml` is `police`.
+
+## Commando's
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/fouilleer <speler>` | Opent de inventaris van een speler in de buurt. | `openminetopia.bodysearch` |
+| `/strafblad add <speler> <omschrijving>` | Zet een regel op het strafblad van een speler. | `openminetopia.criminalrecord.add` |
+| `/strafblad remove <speler> <id>` | Haalt een regel van het strafblad. | `openminetopia.criminalrecord.remove` |
+| `/strafblad info <speler>` | Toont alle regels met id, omschrijving, datum en agent. | `openminetopia.criminalrecord.info` |
+| `/112 <bericht>` | Stuurt een noodmelding naar de politie. | Geen |
+
+<Info>
+  Aliassen: `/bodysearch` voor `/fouilleer`, `/criminalrecord` voor `/strafblad` en `/911` voor `/112`. Typ je alleen `/strafblad`, dan zie je de hulp.
+</Info>
+
+## Permissies
+
+| Permissie | Waarvoor |
+|---|---|
+| `openminetopia.handcuff` | Spelers boeien en losmaken. |
+| `openminetopia.police` | 112-meldingen ontvangen. |
+| `openminetopia.walkietalkie` | De portofoon gebruiken, de politiechat lezen en noodknop-meldingen ontvangen. |
+| `openminetopia.bodysearch` | `/fouilleer` |
+| `openminetopia.criminalrecord.add` | `/strafblad add` |
+| `openminetopia.criminalrecord.remove` | `/strafblad remove` |
+| `openminetopia.criminalrecord.info` | `/strafblad info` |
+
+De taser en de pepperspray hebben geen permissie. Iedereen die het item vasthoudt, kan ze gebruiken.
+
+## Hoe items werken
+
+Elk politie-item is een lijst van items in `config.yml`. Een item telt mee als het type klopt en ook de `custom-model-data`, de schade (`damage`) en het `item-model` overeenkomen met wat je instelt.
+
+```yaml
+handcuff:
+  items:
+    - type: GRAY_DYE
+      custom-model-data: -1
+```
+
+| Sleutel | Betekenis |
+|---|---|
+| `type` | Het Minecraft-materiaal, bijvoorbeeld `GRAY_DYE`. |
+| `custom-model-data` | Custom model data van het item. `-1` betekent geen. |
+| `damage` | Optioneel. De schadewaarde van het item. |
+| `item-model` | Optioneel. Het item-model uit je resourcepack, in de vorm `namespace:pad`. |
+
+Effecten stel je in per effectnaam (in kleine letters, zoals `blindness` of `slowness`) met een `amplifier` en een `duration`. De plugin gebruikt alleen de `amplifier`. Hoe lang een effect duurt, regelt de module zelf.
+
+## Handboeien
+
+Houd de handboeien vast en klik met rechts op een speler. Je hebt `openminetopia.handcuff` nodig. Klik je op een speler die al geboeid is, dan haal je de boeien eraf. Je kunt maar één speler tegelijk boeien.
+
+Een geboeide speler:
+
+- krijgt de effecten uit `handcuffs.effects` zolang hij geboeid is;
+- kan niet horizontaal bewegen, tenzij `can-run-away` aan staat;
+- ziet elke seconde een titel als `show-title` aan staat;
+- wordt naar de agent geteleporteerd als hij meer dan 5 blokken van hem af staat.
+
+Logt de agent of de geboeide speler uit, dan gaan de boeien eraf. Met `logout-teleport` teleporteer je een geboeide speler die uitlogt naar een vaste plek.
+
+```yaml
+handcuff:
+  items:
+    - type: GRAY_DYE
+      custom-model-data: -1
+handcuffs:
+  effects:
+    blindness:
+      amplifier: 2
+      duration: 0
+    mining_fatigue:
+      amplifier: 1
+      duration: 0
+    slowness:
+      amplifier: 4
+      duration: 0
+  can-drop-items: false
+  can-pickup-items: false
+  can-open-inventory: false
+  can-run-away: false
+  can-pvp: false
+  can-change-slots: false
+  show-title: true
+  logout-teleport:
+    enabled: false
+    world: world
+    x: 0.5
+    y: 64.0
+    z: 0.5
+```
+
+<Note>
+  De items staan onder `handcuff.items` (enkelvoud). Alle andere instellingen staan onder `handcuffs` (meervoud).
+</Note>
+
+| Sleutel | Standaard | Betekenis |
+|---|---|---|
+| `can-drop-items` | `false` | Items laten vallen. Staat dit uit, dan kan de speler ook niet in zijn inventaris klikken. |
+| `can-pickup-items` | `false` | Items oppakken. |
+| `can-open-inventory` | `false` | Inventarissen openen. |
+| `can-run-away` | `false` | Horizontaal bewegen. |
+| `can-pvp` | `false` | Andere spelers aanvallen. Zie de waarschuwing hieronder. |
+| `can-change-slots` | `false` | Van hotbar-slot wisselen. |
+| `show-title` | `true` | Toont de titel uit `police_handcuff_title` en `police_handcuff_subtitle`. |
+| `logout-teleport.enabled` | `false` | Teleporteert een geboeide speler bij uitloggen naar de ingestelde plek. Bestaat de wereld niet, dan gebeurt er niets. Naast `world`, `x`, `y` en `z` leest de plugin ook `yaw` en `pitch` (standaard `0`). Die twee schrijft hij niet zelf in het bestand. |
+
+<Warning>
+  `can-pvp` werkt in deze versie niet zoals de naam doet vermoeden. Met `true` kan een geboeide speler niemand slaan. Met `false` kan hij alleen binnen een plaats geen spelers slaan, en alleen als `pvp.enabled` aan staat. Daarbuiten kan hij wel slaan.
+</Warning>
+
+## Taser
+
+Houd de taser vast en klik met rechts op een speler. Het doelwit krijgt de effecten uit `taser.effects` en kan een paar seconden niet horizontaal bewegen.
+
+```yaml
+taser:
+  items:
+    - type: LIGHT_BLUE_DYE
+      custom-model-data: -1
+  usages-enabled: true
+  max-usages: 10
+  cooldown: 3
+  freeze:
+    enabled: true
+    duration: 3
+  effects-duration: 5
+  effects:
+    blindness:
+      amplifier: 0
+      duration: -1
+    slowness:
+      amplifier: 0
+      duration: -1
+```
+
+| Sleutel | Standaard | Betekenis |
+|---|---|---|
+| `usages-enabled` | `true` | Houdt per item bij hoe vaak het nog gebruikt kan worden. |
+| `max-usages` | `10` | Aantal keer dat een nieuwe taser werkt. Daarna is hij leeg. |
+| `cooldown` | `3` | Seconden tussen twee schoten met hetzelfde item. `0` zet de cooldown uit. |
+| `freeze.duration` | `3` | Seconden dat het doelwit niet horizontaal kan bewegen. |
+| `freeze.enabled` | `true` | Wordt ingelezen, maar heeft in deze versie geen effect. Het doelwit wordt altijd stilgezet. |
+| `effects-duration` | `5` | Seconden dat de effecten duren. |
+
+## Pepperspray
+
+Houd de pepperspray vast en klik met rechts op een speler. Het doelwit krijgt de effecten uit `pepperspray.effects`.
+
+```yaml
+pepperspray:
+  items:
+    - type: RED_DYE
+      custom-model-data: -1
+  usages-enabled: true
+  max-usages: 10
+  effects-duration: 5
+  effects:
+    blindness:
+      amplifier: 0
+      duration: -1
+```
+
+| Sleutel | Standaard | Betekenis |
+|---|---|---|
+| `usages-enabled` | `true` | Houdt per item bij hoe vaak het nog gebruikt kan worden. |
+| `max-usages` | `10` | Aantal keer dat een nieuwe pepperspray werkt. |
+| `effects-duration` | `5` | Seconden dat de effecten duren. |
+
+## Nachtkijker en bivakmuts
+
+Deze twee items werken als een speler ze op zijn hoofd draagt. Een kleurstof zet je niet zomaar op je hoofd. Daarvoor is `/head` uit [Overige functies](/plugin/modules/overig). Groene kleurstof en een kleibal staan standaard op die whitelist.
+
+- **Nachtkijker**: de speler krijgt de effecten uit `nightvision.effects` zolang hij hem draagt.
+- **Bivakmuts**: de naam van de speler wordt onleesbaar gemaakt. Ook in berichten van de plugin staat dan onleesbare tekst in plaats van de naam.
+
+```yaml
+balaclava:
+  items:
+    - type: CLAY_BALL
+      custom-model-data: -1
+nightvision:
+  items:
+    - type: GREEN_DYE
+      custom-model-data: -1
+  effects:
+    night_vision:
+      amplifier: 0
+      duration: -1
+```
+
+## Fouilleren
+
+Met `/fouilleer <speler>` open je de inventaris van een andere speler. De speler moet online zijn en binnen `bodysearch.range` blokken staan. Beide spelers krijgen een melding.
+
+Zit er een rugzak in de inventaris? Klik er met rechts op om de inhoud te bekijken. Zie [Rugzakken](/plugin/modules/rugzakken).
+
+```yaml
+bodysearch:
+  range: 10
+```
+
+## Strafbladen
+
+Strafbladen worden in de database opgeslagen, in de tabel `criminal_records`. Elke regel krijgt een id. Dat id heb je nodig voor `/strafblad remove`.
+
+De datum bij `/strafblad info` volgt het formaat uit `police_criminal_record_date_format` in `messages.yml`. Standaard is dat `dd-MM-yyyy HH:mm:ss`.
+
+## 112-meldingen
+
+Met `/112 <bericht>` stuur je een melding naar alle online spelers met `openminetopia.police`. De melding bevat je naam, wereld en coördinaten. Stuur je de melding vanuit de console, dan is de afzender "Anoniem".
+
+Een speler kan één melding per `emergency.cooldown` seconden sturen.
+
+```yaml
+emergency:
+  cooldown: 300
+```
+
+Het formaat staat in `emergency_format` in `messages.yml`. Je kunt daar `<sender>`, `<world>`, `<x>`, `<y>`, `<z>` en `<message>` gebruiken.
+
+<Warning>
+  In deze versie stopt het versturen bij de eerste online speler zonder `openminetopia.police`. Agenten die later in de spelerslijst staan, krijgen de melding dan niet.
+</Warning>
+
+## Portofoon
+
+Klik met het portofoon-item in je hand om het menu **Portofoon** te openen. Je hebt `openminetopia.walkietalkie` nodig.
+
+- **Politiechat**: zet de politiechat aan of uit. Staat hij aan, dan gaan je chatberichten naar alle online spelers met `openminetopia.walkietalkie` en naar de console.
+- **Contacten**: een lijst van andere online spelers met `openminetopia.walkietalkie`. Spelers met onzichtbaarheid staan er niet in. Klik op een speler en typ je bericht in de chat. Jij, de ontvanger en de console zien het bericht.
+- **NOODKNOP**: stuurt een melding met jouw naam en locatie naar alle spelers met `openminetopia.walkietalkie`.
+
+```yaml
+walkietalkie:
+  items:
+    - type: PINK_DYE
+      custom-model-data: -1
+  emergency-button:
+    cooldown-enabled: true
+    cooldown-seconds: 60
+```
+
+<Warning>
+  De noodknop werkt in deze versie niet goed. Met `cooldown-enabled: false` doet de knop niets. Met `true` werkt hij één keer per speler. Daarna krijgt die speler tot de volgende herstart alleen nog de cooldown-melding.
+</Warning>
+
+## Berichten
+
+Alle teksten van deze module staan in `messages.yml`. De sleutels beginnen met `police_` of `emergency_`.

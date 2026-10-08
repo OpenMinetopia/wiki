@@ -1,0 +1,645 @@
+---
+title: "Configuratie"
+description: "Welke bestanden OpenMinetopia aanmaakt, alle instellingen in config.yml en hoe je wijzigingen laadt."
+icon: "gear"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/configuration/DefaultConfiguration.java, configuration/MessageConfiguration.java, utils/config/ConfigurateConfig.java, utils/config/ConfigUtils.java, utils/item/ItemUtils.java, utils/ChatUtils.java, OpenMinetopia.java, utils/modules/ExtendedSpigotModule.java, modules/core/commands/OpenMinetopiaCommand.java, modules/data/ (DataModule, types/DatabaseType, adapters/*), modules/portal/ (PortalModule, commands/LinkCommand), modules/restapi/ (RestAPIModule, verticles/MainVerticle), modules/*/configuration/*Configuration.java, modules/items/ItemsModule.java, modules/chat/ (listeners/PlayerChatListener, utils/SpyUtils), modules/scoreboard/ScoreboardModule.java, api/player/ScoreboardManager.java, modules/actionbar/runnables/ActionbarRunnable.java, modules/teleporter/utils/TeleporterUtil.java, modules/detectiongates/ (DetectionModule, listeners/DetectionListener), modules/plots/commands/subcommands/PlotCreateCommand.java, modules/police/ (commands, listeners, utils, taser, walkietalkie), modules/misc/ (listeners/PlayerAttackListener, listeners/TrashcanListener, objects/PvPItem, commands/HeadCommand), modules/lock/utils/KeyUtil.java, modules/time/ (TimeModule, tasks/TimeSyncRunnable), src/main/resources/default/config.yml, src/main/resources/default/messages.yml */}
+
+OpenMinetopia bewaart al zijn instellingen in de map `plugins/OpenMinetopia`. Op deze pagina lees je welke bestanden daar staan, wat elke instelling in `config.yml` doet en hoe je wijzigingen laadt.
+
+## De datamap
+
+De plugin maakt de bestanden zelf aan bij de eerste start. Een modulebestand verschijnt alleen als die module aan staat.
+
+| Bestand | Gemaakt door | Uitleg |
+|---|---|---|
+| `config.yml` | `DefaultConfiguration` | Algemene instellingen. Staat hieronder. |
+| `messages.yml` | `MessageConfiguration` | Alle berichten van de plugin. Zie [Berichten](#berichten-messagesyml). |
+| `levelcheck.yml` | `LevelCheckConfiguration` (module `player`) | [Levels](/plugin/modules/levels) |
+| `banking.yml` | `BankingConfiguration` (module `banking`) | [Bankieren](/plugin/modules/bankieren) |
+| `currencies.yml` | `CurrencyConfiguration` (module `currencies`) | [Valuta](/plugin/modules/valuta) |
+| `fitness.yml` | `FitnessConfiguration` (module `fitness`) | [Fitheid](/plugin/modules/fitheid) |
+| `colors.yml` | `ColorsConfiguration` (module `color`) | [Kleuren](/plugin/modules/kleuren) |
+| `plotcalculate.yml` | `PlotCalculateConfiguration` (module `plots`) | [Plots](/plugin/modules/plots) |
+| `books.yml` | `BooksConfiguration` (module `books`) | [Boeken](/plugin/modules/boeken) |
+| `labymod.yml` | `LabymodConfiguration` (module `labymod`) | [LabyMod](/plugin/modules/labymod) |
+| `items/` | `ItemsModule` | Map met `categories.yml` en de itembestanden. Zie [Items](/plugin/modules/items). |
+| `database.db` | `SQLiteAdapter` | De database, alleen bij `database.type: sqlite`. |
+
+De plugin vult ontbrekende sleutels in `config.yml` zelf aan met de standaardwaarde. Dat gebeurt bij elke start en bij `/openminetopia reload`. Haal je een sleutel weg, dan staat hij er de volgende keer dus weer. Een lege tekstlijst, zoals `scoreboard.lines: []` of `plot.commands-on-create: []`, telt ook als ontbrekend: de plugin zet dan de standaardlijst terug.
+
+<Warning>
+  De plugin schrijft `config.yml` ook zelf weg, bijvoorbeeld bij `/head add` en `/head remove`. Bewerk je het bestand terwijl de server draait, laad je wijzigingen dan meteen met `/openminetopia reload`. Anders kan de plugin ze overschrijven.
+</Warning>
+
+## config.yml
+
+Hieronder staan alle sleutels per onderdeel, met de standaardwaarde die de plugin wegschrijft.
+
+Teksten gebruiken [MiniMessage](https://docs.advntr.dev/minimessage/format.html), zoals `<gray>` en `<gold>`. In de chat-opmaak, het scoreboard en de actiebalk kun je de placeholders van OpenMinetopia gebruiken, zoals `<level>` en `<world_color>`. Die staan op [Placeholders](/plugin/placeholders).
+
+### Statistieken
+
+```yaml
+metrics:
+  enabled: true
+```
+
+| Sleutel | Type | Standaard | Wat het doet |
+|---|---|---|---|
+| `metrics.enabled` | boolean | `true` | Stuurt gebruiksstatistieken naar bStats, waaronder het type database dat je gebruikt. |
+
+### Database
+
+```yaml
+database:
+  type: sqlite
+  host: localhost
+  port: 3306
+  name: openminetopia
+  username: root
+  password: password
+```
+
+| Sleutel | Type | Standaard | Wat het doet |
+|---|---|---|---|
+| `database.type` | tekst | `sqlite` | `sqlite` of `mysql`. Hoofdletters maken niet uit. |
+| `database.host` | tekst | `localhost` | Adres van de MySQL-server. |
+| `database.port` | getal | `3306` | Poort van de MySQL-server. |
+| `database.name` | tekst | `openminetopia` | Naam van de database. |
+| `database.username` | tekst | `root` | Gebruikersnaam voor de database. |
+| `database.password` | tekst | `password` | Wachtwoord voor de database. |
+
+- `sqlite` bewaart alles in het bestand `database.db` in de datamap. De andere database-sleutels gebruikt de plugin dan niet.
+- `mysql` verbindt met `host`, `port`, `name`, `username` en `password`. Gebruik dit voor een MySQL- of MariaDB-server.
+- Lukt de verbinding niet, dan schakelt de plugin zichzelf uit en zie je de fout in de console.
+- Herkent de plugin het type niet, dan gebruikt hij SQLite en logt hij een foutmelding.
+
+<Warning>
+  De code kent ook het type `mongo`, maar dat is niet geïmplementeerd. Met `type: mongo` start de database niet.
+</Warning>
+
+### REST API
+
+```yaml
+rest-api:
+  enabled: false
+  host: 127.0.0.1
+  port: 4567
+  api-key: CHANGE-ME
+```
+
+| Sleutel | Type | Standaard | Wat het doet |
+|---|---|---|---|
+| `rest-api.enabled` | boolean | `false` | Start de ingebouwde webserver van de REST API. |
+| `rest-api.host` | tekst | `127.0.0.1` | Adres waarop de API luistert. |
+| `rest-api.port` | getal | `4567` | Poort waarop de API luistert. |
+| `rest-api.api-key` | tekst | `CHANGE-ME` | Sleutel die elk verzoek moet meesturen in de header `X-API-Key`. Verander deze altijd. |
+
+Meer hierover op [REST API](/plugin/rest-api).
+
+### Portaal
+
+```yaml
+portal:
+  enabled: false
+  url: portal.openminetopia.nl
+  token: CHANGE-ME
+```
+
+| Sleutel | Type | Standaard | Wat het doet |
+|---|---|---|---|
+| `portal.enabled` | boolean | `false` | Zet het commando `/koppel` (alias `/link`) aan. |
+| `portal.url` | tekst | `portal.openminetopia.nl` | Adres van het portaal. |
+| `portal.token` | tekst | `CHANGE-ME` | Token van je server in het portaal. De plugin stuurt het mee in de header `X-API-Key`. |
+
+De plugin zet `/api` achter `portal.url`. Begint het adres met `http://` of `https://`, dan gebruikt de plugin het zoals het er staat. Staat er alleen een domeinnaam, dan zet de plugin er `https://` voor, of `http://` als de naam op `.test` eindigt (voor lokaal testen). Meer op [Koppelen met de plugin](/portaal/koppelen).
+
+Hoe je je server koppelt, lees je op [Server koppelen](/portaal/koppelen).
+
+### Standaardwaarden voor spelers
+
+```yaml
+default:
+  prefix: Zwerver
+  prefix-color: <gray>
+  level: 1
+  level-color: <gray>
+  name-color: <white>
+  chat-color: <white>
+```
+
+| Sleutel | Type | Standaard | Wat het doet |
+|---|---|---|---|
+| `default.prefix` | tekst | `Zwerver` | Prefix van een speler zonder actieve prefix. |
+| `default.prefix-color` | tekst | `<gray>` | Standaardkleur van de prefix. |
+| `default.level` | getal | `1` | Laagste level dat de levelberekening geeft. |
+| `default.level-color` | tekst | `<gray>` | Standaardkleur van het level. |
+| `default.name-color` | tekst | `<white>` | Standaardkleur van de naam. |
+| `default.chat-color` | tekst | `<white>` | Standaardkleur van chatberichten. |
+
+Draagt een speler een bivakmuts, dan toont de chat deze standaardwaarden in plaats van zijn eigen prefix, level en kleuren. Zie ook [Prefixen](/plugin/modules/prefixen), [Kleuren](/plugin/modules/kleuren) en [Levels](/plugin/modules/levels).
+
+### Chat
+
+```yaml
+chat:
+  format: '<dark_gray>[<level_color>Level <level><reset><dark_gray>] <dark_gray>[<prefix_color><prefix><reset><dark_gray>] <name_color><player><reset>: <chat_color><message>'
+  enabled: true
+  radius:
+    enabled: true
+    range: 20
+    notify-when-nobody-in-range: false
+```
+
+| Sleutel | Type | Standaard | Wat het doet |
+|---|---|---|---|
+| `chat.format` | tekst | zie hierboven | Opmaak van een chatbericht. `<message>` is het bericht zelf. |
+| `chat.enabled` | boolean | `true` | Zet de chatopmaak en de chatradius van OpenMinetopia aan. |
+| `chat.radius.enabled` | boolean | `true` | Alleen spelers binnen de radius zien je bericht. |
+| `chat.radius.range` | getal | `20` | Radius in blokken. |
+| `chat.radius.notify-when-nobody-in-range` | boolean | `false` | Is er niemand binnen de radius, dan krijg je een melding en wordt je bericht niet verstuurd. |
+
+De opmaak werkt alleen als de speler in een plaats staat. Meer op [Chat](/plugin/modules/chat).
+
+### Scoreboard
+
+```yaml
+scoreboard:
+  enabled: true
+  lines:
+  - <world_title>
+  - '<world_color>Temperatuur:'
+  - <temperature>°C
+  - ' '
+  - '<world_color>Level:'
+  - <level> -> <calculated_level> (<levelups><white>)
+  - ' '
+  - '<world_color>Fitheid:'
+  - <fitness>/<max_fitness>
+```
+
+| Sleutel | Type | Standaard | Wat het doet |
+|---|---|---|---|
+| `scoreboard.enabled` | boolean | `true` | Zet het scoreboard aan. |
+| `scoreboard.lines` | lijst | zie hierboven | De regels. De eerste regel is de titel. De plugin toont maximaal 16 regels. |
+
+Meer op [Scoreboard en actiebalk](/plugin/modules/scoreboard-actionbar).
+
+### Actiebalk
+
+```yaml
+actionbar:
+  enabled: true
+  text: '<world_color>Datum: <white><date> <world_color>Tijd: <white><time>'
+```
+
+| Sleutel | Type | Standaard | Wat het doet |
+|---|---|---|---|
+| `actionbar.enabled` | boolean | `true` | Zet de actiebalk aan. Spelers zien hem alleen in een plaats. |
+| `actionbar.text` | tekst | zie hierboven | Tekst in de actiebalk. |
+
+### Teleporters
+
+```yaml
+teleporter:
+  lines:
+  - <gold>Teleporter
+  - <grey><x>;<y>;<z>;<world>
+```
+
+| Sleutel | Type | Standaard | Wat het doet |
+|---|---|---|---|
+| `teleporter.lines` | lijst | zie hierboven | Tekst boven een teleporter. `<x>`, `<y>`, `<z>` en `<world>` zijn de bestemming. |
+
+Meer op [Teleporters](/plugin/modules/teleporters).
+
+### Detectiepoortjes
+
+```yaml
+detection-gate:
+  enabled: true
+  blocks:
+    replacement-range: 5
+    pressure-plate-type: LIGHT_WEIGHTED_PRESSURE_PLATE
+    activation-block: IRON_BLOCK
+  cooldown: 3
+  flagged-materials:
+  - type: SUGAR
+    custom-model-data: -1
+  # ... en de andere items uit de tabel hieronder
+  flag-blocks:
+    safe:
+      BLACK_WOOL: LIME_WOOL
+      BLACK_CONCRETE: LIME_CONCRETE
+      BLACK_TERRACOTTA: LIME_TERRACOTTA
+      BLACK_STAINED_GLASS: LIME_STAINED_GLASS
+    flagged:
+      BLACK_WOOL: RED_WOOL
+      BLACK_CONCRETE: RED_CONCRETE
+      BLACK_TERRACOTTA: RED_TERRACOTTA
+      BLACK_STAINED_GLASS: RED_STAINED_GLASS
+```
+
+| Sleutel | Type | Standaard | Wat het doet |
+|---|---|---|---|
+| `detection-gate.enabled` | boolean | `true` | Zet detectiepoortjes aan. |
+| `detection-gate.blocks.replacement-range` | getal | `5` | Wordt in de huidige versie niet gebruikt. De plugin zoekt altijd binnen 5 blokken. |
+| `detection-gate.blocks.pressure-plate-type` | materiaal | `LIGHT_WEIGHTED_PRESSURE_PLATE` | Drukplaat die het poortje activeert. |
+| `detection-gate.blocks.activation-block` | materiaal | `IRON_BLOCK` | Blok dat onder de drukplaat moet liggen. |
+| `detection-gate.cooldown` | getal | `3` | Seconden voordat het poortje terugspringt en weer werkt. |
+| `detection-gate.flagged-materials` | itemlijst | 12 items | Items die het poortje laten afgaan. |
+| `detection-gate.flag-blocks.safe` | blok: blok | zie hierboven | Welke blokken in welk blok veranderen als er niets gevonden is. |
+| `detection-gate.flag-blocks.flagged` | blok: blok | zie hierboven | Welke blokken in welk blok veranderen als er wel iets gevonden is. |
+
+Standaard staan in `flagged-materials`: `SUGAR`, `IRON_HOE`, `STICK`, `WOODEN_SWORD`, `SPIDER_EYE`, `FERMENTED_SPIDER_EYE`, `SNOWBALL`, `ARROW`, `BOW`, `ROTTEN_FLESH`, `STONE_HOE` en `POISONOUS_POTATO`. Elk item staat erin met `custom-model-data: -1`.
+
+Meer op [Detectiepoortjes](/plugin/modules/detectiepoortjes).
+
+### Plots
+
+```yaml
+plot:
+  commands-on-create:
+  - rg flag <plot> -w <world> interact -g NON_MEMBERS DENY
+  - rg flag <plot> -w <world> chest-access -g NON_MEMBERS DENY
+  - rg flag <plot> -w <world> USE -g MEMBERS ALLOW
+  - rg flag <plot> -w <world> INTERACT -g MEMBERS ALLOW
+  - rg flag <plot> -w <world> PVP ALLOW
+```
+
+| Sleutel | Type | Standaard | Wat het doet |
+|---|---|---|---|
+| `plot.commands-on-create` | lijst | zie hierboven | Commando's die de console uitvoert als je een plot aanmaakt. `<plot>` is de naam van de plot, `<world>` de wereld. |
+
+Meer op [Plots](/plugin/modules/plots).
+
+### Politie
+
+Alle instellingen voor politie-items staan los in `config.yml`. Ze horen bij de module [Politie](/plugin/modules/politie).
+
+```yaml
+emergency:
+  cooldown: 300
+balaclava:
+  items:
+  - type: CLAY_BALL
+    custom-model-data: -1
+handcuff:
+  items:
+  - type: GRAY_DYE
+    custom-model-data: -1
+handcuffs:
+  effects:
+    blindness:
+      amplifier: 2
+      duration: 0
+    mining_fatigue:
+      amplifier: 1
+      duration: 0
+    slowness:
+      amplifier: 4
+      duration: 0
+  can-drop-items: false
+  can-pickup-items: false
+  can-open-inventory: false
+  can-run-away: false
+  can-pvp: false
+  can-change-slots: false
+  show-title: true
+  logout-teleport:
+    enabled: false
+    world: world
+    x: 0.5
+    y: 64.0
+    z: 0.5
+pepperspray:
+  items:
+  - type: RED_DYE
+    custom-model-data: -1
+  usages-enabled: true
+  max-usages: 10
+  effects-duration: 5
+  effects:
+    blindness:
+      amplifier: 0
+      duration: -1
+nightvision:
+  items:
+  - type: GREEN_DYE
+    custom-model-data: -1
+  effects:
+    night_vision:
+      amplifier: 0
+      duration: -1
+taser:
+  items:
+  - type: LIGHT_BLUE_DYE
+    custom-model-data: -1
+  usages-enabled: true
+  max-usages: 10
+  cooldown: 3
+  freeze:
+    enabled: true
+    duration: 3
+  effects-duration: 5
+  effects:
+    blindness:
+      amplifier: 0
+      duration: -1
+    slowness:
+      amplifier: 0
+      duration: -1
+bodysearch:
+  range: 10
+walkietalkie:
+  items:
+  - type: PINK_DYE
+    custom-model-data: -1
+  emergency-button:
+    cooldown-enabled: true
+    cooldown-seconds: 60
+```
+
+<Note>
+  De items van de handboeien staan onder `handcuff.items`. Alle andere handboei-instellingen staan onder `handcuffs` (met een s).
+</Note>
+
+| Sleutel | Type | Standaard | Wat het doet |
+|---|---|---|---|
+| `emergency.cooldown` | getal | `300` | Seconden tussen twee keer het noodcommando gebruiken. |
+| `balaclava.items` | itemlijst | `CLAY_BALL` | Items die als bivakmuts tellen. |
+| `handcuff.items` | itemlijst | `GRAY_DYE` | Items die als handboeien tellen. |
+| `handcuffs.effects` | effecten | zie hierboven | Effecten zolang iemand geboeid is. |
+| `handcuffs.can-drop-items` | boolean | `false` | Geboeide spelers kunnen items laten vallen. |
+| `handcuffs.can-pickup-items` | boolean | `false` | Geboeide spelers kunnen items oppakken. |
+| `handcuffs.can-open-inventory` | boolean | `false` | Geboeide spelers kunnen hun inventory openen. |
+| `handcuffs.can-run-away` | boolean | `false` | Geboeide spelers kunnen weglopen. |
+| `handcuffs.can-pvp` | boolean | `false` | Geboeide spelers kunnen anderen slaan. |
+| `handcuffs.can-change-slots` | boolean | `false` | Geboeide spelers kunnen van hotbar-slot wisselen. |
+| `handcuffs.show-title` | boolean | `true` | Geboeide spelers zien een titel op hun scherm. |
+| `handcuffs.logout-teleport.enabled` | boolean | `false` | Teleporteert een speler die geboeid uitlogt naar de locatie hieronder. |
+| `handcuffs.logout-teleport.world` | tekst | `world` | Wereld van die locatie. |
+| `handcuffs.logout-teleport.x` / `y` / `z` | getal | `0.5` / `64.0` / `0.5` | Coördinaten van die locatie. |
+| `handcuffs.logout-teleport.yaw` / `pitch` | getal | `0` / `0` | Kijkrichting op die locatie. Deze twee sleutels schrijft de plugin niet in het bestand. Voeg ze zelf toe als je ze nodig hebt. |
+| `pepperspray.items` | itemlijst | `RED_DYE` | Items die als pepperspray tellen. |
+| `pepperspray.usages-enabled` | boolean | `true` | Een pepperspray kan maar een beperkt aantal keer gebruikt worden. |
+| `pepperspray.max-usages` | getal | `10` | Aantal keer dat een pepperspray werkt. |
+| `pepperspray.effects-duration` | getal | `5` | Seconden dat de effecten duren. |
+| `pepperspray.effects` | effecten | `blindness` | Effecten voor wie geraakt wordt. |
+| `nightvision.items` | itemlijst | `GREEN_DYE` | Items die als nachtkijker tellen. |
+| `nightvision.effects` | effecten | `night_vision` | Effecten zolang iemand de nachtkijker draagt. |
+| `taser.items` | itemlijst | `LIGHT_BLUE_DYE` | Items die als taser tellen. |
+| `taser.usages-enabled` | boolean | `true` | Een taser kan maar een beperkt aantal keer gebruikt worden. |
+| `taser.max-usages` | getal | `10` | Aantal keer dat een taser werkt. |
+| `taser.cooldown` | getal | `3` | Seconden tussen twee schoten. Met `0` is er geen wachttijd. |
+| `taser.freeze.enabled` | boolean | `true` | Wordt in de huidige versie niet gebruikt. |
+| `taser.freeze.duration` | getal | `3` | Seconden dat een geraakte speler stil staat. |
+| `taser.effects-duration` | getal | `5` | Seconden dat de effecten duren. |
+| `taser.effects` | effecten | `blindness`, `slowness` | Effecten voor wie geraakt wordt. |
+| `bodysearch.range` | getal | `10` | Maximale afstand in blokken voor fouilleren. |
+| `walkietalkie.items` | itemlijst | `PINK_DYE` | Items die als portofoon tellen. |
+| `walkietalkie.emergency-button.cooldown-enabled` | boolean | `true` | Zet een wachttijd op de noodknop van de portofoon. |
+| `walkietalkie.emergency-button.cooldown-seconds` | getal | `60` | De wachttijd voor de noodknop. |
+
+<Warning>
+  De wachttijd van de noodknop werkt in de huidige versie niet zoals bedoeld. De plugin telt `cooldown-seconds` op als milliseconden en controleert de wachttijd andersom. Met `cooldown-enabled: false` doet de noodknop helemaal niets.
+</Warning>
+
+#### Items en effecten invullen
+
+Een **itemlijst** is een lijst met items. Per item kun je deze velden invullen:
+
+| Veld | Wat het doet |
+|---|---|
+| `type` | Het materiaal, bijvoorbeeld `GRAY_DYE`. Verplicht. |
+| `custom-model-data` | Custom model data. `-1` betekent: niet gebruiken. |
+| `item-model` | Item model in de vorm `namespace:sleutel`. Optioneel. |
+| `damage` | Schade-waarde. Optioneel. |
+
+Bij elk item schrijft de plugin zelf ook `damage: -1` en `item-model: ''` in `config.yml`. `-1` en een lege tekst betekenen: niet gebruiken. In de voorbeelden op deze pagina staan die twee regels niet.
+
+Bij **effecten** is de sleutel de naam van een Minecraft-effect, zoals `blindness` of `slowness`. Onder elk effect staat `amplifier` (de sterkte, `0` is niveau 1). Het veld `duration` gebruikt de plugin niet. Bij pepperspray en taser bepaalt `effects-duration` hoe lang de effecten duren. Bij handboeien en nachtkijker duren ze zolang iemand geboeid is of de nachtkijker op heeft.
+
+### Hoofden
+
+```yaml
+head:
+  whitelist:
+  - type: CLAY_BALL
+    custom-model-data: -1
+  # ... en de andere items hieronder
+```
+
+| Sleutel | Type | Standaard | Wat het doet |
+|---|---|---|---|
+| `head.whitelist` | itemlijst | 27 items | Items die een speler op zijn hoofd mag zetten. |
+
+Standaard staan erin: `CLAY_BALL`, `BEDROCK`, `SPONGE`, `IRON_ORE`, `COAL_ORE`, `LAPIS_ORE`, `DIAMOND_ORE`, `REDSTONE_ORE`, `SOUL_SAND`, `NETHERRACK`, `NETHER_BRICK`, `END_STONE`, `NETHER_QUARTZ_ORE`, `EMERALD_ORE`, `PRISMARINE`, `RED_SANDSTONE`, `INK_SAC`, `MAGMA_CREAM`, `NETHER_WART`, `PRISMARINE_SHARD`, `PRISMARINE_CRYSTALS`, `CARROT_ON_A_STICK`, `SHEARS`, `GLASS`, `BLACK_STAINED_GLASS`, `DIAMOND_HOE` met `custom-model-data: 89` en `GREEN_DYE`. De andere items hebben `custom-model-data: -1`.
+
+Je kunt items ook in-game toevoegen en weghalen met `/head add` en `/head remove`. Zie [Overig](/plugin/modules/overig).
+
+### PvP
+
+```yaml
+pvp:
+  enabled: true
+```
+
+| Sleutel | Type | Standaard | Wat het doet |
+|---|---|---|---|
+| `pvp.enabled` | boolean | `true` | Zet de PvP-regels van OpenMinetopia aan. |
+| `pvp.items` | lijst | leeg | Items waarmee spelers elkaar mogen aanvallen, met een bericht voor aanvaller en slachtoffer. |
+
+Met `pvp.enabled: true` mogen spelers in een plaats elkaar alleen aanvallen met een item uit `pvp.items`. Slaan met de hand of met een item dat er niet in staat, wordt geblokkeerd. Dat geldt ook voor sneeuwballen en pijlen, tenzij `SNOWBALL` of `ARROW` in de lijst staat.
+
+Bij een nieuwe installatie is `pvp.items` leeg. De jar bevat wel een voorbeeldlijst, maar die kopieert de plugin niet. Wil je hem gebruiken, zet hem dan zelf in je `config.yml`:
+
+```yaml
+pvp:
+  enabled: true
+  items:
+    - item:
+        type: STICK
+      attacker-message: "<red>Je hebt <dark_red><victim> <red>geslagen met jouw knuppel"
+      victim-message: "<red>Je bent geslagen met een knuppel!"
+    - item:
+        type: FERMENTED_SPIDER_EYE
+      attacker-message: "<red>Je hebt <dark_red><victim> <red>geslagen met jouw wapenstok"
+      victim-message: "<red>Je bent geslagen met een wapenstok!"
+    - item:
+        type: STONE_AXE
+      attacker-message: "<red>Je hebt <dark_red><victim> <red>geslagen met jouw knuppel"
+      victim-message: "<red>Je bent geslagen met een knuppel!"
+    - item:
+        type: STONE_HOE
+      attacker-message: "<red>Je hebt <dark_red><victim> <red>geslagen met jouw knuppel"
+      victim-message: "<red>Je bent geslagen met een knuppel!"
+    - item:
+        type: WOODEN_SWORD
+      attacker-message: "<red>Je hebt <dark_red><victim> <red>gestoken met jouw mes"
+      victim-message: "<red>Je bent gestoken met een mes!"
+    - item:
+        type: SNOWBALL
+      attacker-message: "<red>Je hebt <dark_red><victim> <red>geraakt met jouw sneeuwbal"
+      victim-message: "<red>Je bent geraakt met een sneeuwbal!"
+    - item:
+        type: ARROW
+      attacker-message: "<red>Je hebt <dark_red><victim> <red>geraakt met jouw schot"
+      victim-message: "<red>Je bent geraakt met een schot!"
+```
+
+Per item:
+
+| Veld | Wat het doet |
+|---|---|
+| `item` | Het item, met dezelfde velden als bij een [itemlijst](#items-en-effecten-invullen). |
+| `attacker-message` | Bericht voor de aanvaller. |
+| `victim-message` | Bericht voor het slachtoffer. |
+
+In beide berichten kun je `<attacker>`, `<victim>` en `<item>` gebruiken. `<item>` is de naam van het materiaal. Laat je een bericht weg, dan vult de plugin een standaardbericht in.
+
+### Sleutels
+
+```yaml
+key:
+  type: PAPER
+  custom-model-data: -1
+  item-model: minecraft:custom/items/sleutel
+  name: <gold>Sleutel
+  lore:
+  - <gray>Een sleutel om sloten mee te openen.
+  lore-master: '<gray>Past op: <green>alle sloten'
+  lore-blocks: '<gray>Vergrendelde blokken: <white><amount>'
+  lore-plot: '<gray>Plot: <white><plot>'
+```
+
+| Sleutel | Type | Standaard | Wat het doet |
+|---|---|---|---|
+| `key.type` | materiaal | `PAPER` | Materiaal van de sleutel. Bij een ongeldig materiaal gebruikt de plugin `PAPER`. |
+| `key.custom-model-data` | getal | `-1` | Custom model data. `-1` betekent: niet gebruiken. |
+| `key.item-model` | tekst | `minecraft:custom/items/sleutel` | Item model van de sleutel. Leeg betekent: niet gebruiken. |
+| `key.name` | tekst | `<gold>Sleutel` | Naam van de sleutel. |
+| `key.lore` | lijst | zie hierboven | Vaste regels onder de naam. |
+| `key.lore-master` | tekst | zie hierboven | Regel op een sleutel die op alle sloten past. |
+| `key.lore-blocks` | tekst | zie hierboven | Regel met het aantal vergrendelde blokken. `<amount>` is dat aantal. |
+| `key.lore-plot` | tekst | zie hierboven | Regel per plot waar de sleutel op past. `<plot>` is de plot. |
+
+Meer op [Sloten](/plugin/modules/sloten).
+
+### Prullenbakken
+
+```yaml
+trashcan:
+  enabled: true
+  blocks:
+  - DROPPER
+  use-dropper-inventory: false
+```
+
+| Sleutel | Type | Standaard | Wat het doet |
+|---|---|---|---|
+| `trashcan.enabled` | boolean | `true` | Zet prullenbakken aan. |
+| `trashcan.blocks` | lijst | `DROPPER` | Blokken die een prullenbak openen als je erop klikt. |
+| `trashcan.use-dropper-inventory` | boolean | `false` | Heeft in de huidige versie geen effect. De plugin opent altijd een eigen prullenbak-menu. |
+
+### Tijd
+
+```yaml
+timesync:
+  enabled: true
+  timezone: Europe/Amsterdam
+```
+
+| Sleutel | Type | Standaard | Wat het doet |
+|---|---|---|---|
+| `timesync.enabled` | boolean | `true` | Zet de tijd in je Minetopia-werelden gelijk met de echte tijd. |
+| `timesync.timezone` | tekst | `Europe/Amsterdam` | Tijdzone voor die tijd. |
+
+Meer op [Tijd](/plugin/modules/tijd).
+
+### Discord-webhooks
+
+```yaml
+spy:
+  chat-spy-webhook: ''
+  command-spy-webhook: ''
+```
+
+| Sleutel | Type | Standaard | Wat het doet |
+|---|---|---|---|
+| `spy.chat-spy-webhook` | tekst | leeg | Discord-webhook die elk chatbericht van spelers ontvangt. Leeg betekent: uit. |
+| `spy.command-spy-webhook` | tekst | leeg | Discord-webhook die elk commando van spelers ontvangt. Leeg betekent: uit. |
+
+Meer over chatspy en commandspy op [Staff](/plugin/modules/staff).
+
+### Modules uitzetten
+
+```yaml
+disabled-modules: []
+```
+
+| Sleutel | Type | Standaard | Wat het doet |
+|---|---|---|---|
+| `disabled-modules` | lijst | leeg | Modules die de plugin niet laadt. |
+
+Een modulenaam is de naam van de map van die module in de broncode. Hoofdletters maken niet uit. Deze namen kun je gebruiken:
+
+`actionbar`, `backpack`, `banking`, `books`, `chat`, `color`, `core`, `currencies`, `detectiongates`, `fitness`, `items`, `labymod`, `lock`, `misc`, `places`, `plots`, `police`, `portal`, `prefix`, `restapi`, `scoreboard`, `skript`, `staff`, `teleporter`, `time`, `transactions`
+
+`player` en `data` kun je niet uitzetten. De plugin negeert die namen.
+
+```yaml
+disabled-modules:
+  - labymod
+  - skript
+```
+
+<Warning>
+  Niet elke module kan zonder problemen uit. Sommige onderdelen vragen andere modules direct op. Zo gebruikt de opmaak van chat, scoreboard en actiebalk altijd `banking` en `currencies`, en de chat ook `police`. Zet je zo'n module uit, dan kun je fouten in de console krijgen. Zet je `core` uit, dan verdwijnt ook `/openminetopia reload`.
+</Warning>
+
+## Berichten (messages.yml)
+
+In `messages.yml` staan alle teksten die spelers van de plugin te zien krijgen. Elk bericht is één regel met een sleutel en een tekst:
+
+```yaml
+no_player_provided: "<red>Je moet een speler opgeven."
+banking_account_created: "<gold>Je hebt de rekening</gold> <red><account_name></red> <gold>aangemaakt."
+```
+
+- Berichten gebruiken [MiniMessage](https://docs.advntr.dev/minimessage/format.html). Oude kleurcodes met `§` haalt de plugin weg.
+- Woorden tussen `< >` die geen kleur zijn, zoals `<account_name>`, vult de plugin zelf in. Welke placeholders er zijn, verschilt per bericht. Kijk naar het bericht in het standaardbestand.
+- Begin je een bericht met `[title]` of `[action]`, dan toont de plugin het als titel of in de actiebalk. Dit werkt niet bij elk bericht.
+- Ontbreekt een sleutel, dan zet de plugin hem bij de volgende start of reload terug met de standaardtekst. Je eigen teksten blijven staan.
+- Vindt de plugin een bericht niet, dan zie je in-game `<sleutel> was not found.`.
+
+## Wijzigingen laden
+
+Pas je een bestand aan, laad het dan opnieuw met:
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/openminetopia reload` | Laadt de configuratie opnieuw. | `openminetopia.reload` |
+
+Je kunt ook `/omt reload`, `/minetopia reload` of `/sdb reload` gebruiken.
+
+Dit commando laadt opnieuw:
+
+- `config.yml`, `messages.yml` en `levelcheck.yml`;
+- `colors.yml`, `fitness.yml`, `banking.yml`, `plotcalculate.yml`, `books.yml` en `labymod.yml`, als die module aan staat;
+- de map `items/`, als de module `items` aan staat.
+
+`currencies.yml` laadt dit commando niet opnieuw. Herstart daarvoor de server.
+
+Sommige instellingen in `config.yml` leest de plugin alleen bij het opstarten. Na een wijziging hierin moet je de server herstarten:
+
+- `metrics.enabled`
+- alles onder `database`
+- `rest-api.enabled`, `rest-api.host` en `rest-api.port`
+- `portal.enabled`
+- `default.prefix-color`, `default.level-color`, `default.name-color` en `default.chat-color` (behalve in de chat van iemand met een bivakmuts)
+- `scoreboard.enabled`
+- `timesync.enabled`
+- `disabled-modules`

@@ -1,0 +1,89 @@
+---
+title: "Prefixen"
+description: "Geef spelers prefixen, tijdelijk of voor altijd, en laat ze zelf hun prefix kiezen."
+icon: "tag"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/modules/prefix/ (PrefixModule.java, commands/PrefixCommand.java, commands/subcommands/*, menus/PrefixMenu.java, objects/Prefix.java, models/PrefixModel.java, events/PlayerChangePrefixEvent.java), src/main/java/nl/openminetopia/api/player/objects/MinetopiaPlayer.java, src/main/java/nl/openminetopia/configuration/DefaultConfiguration.java, src/main/resources/default/messages.yml */}
+
+Een prefix is een titel voor de naam van een speler, zoals een beroep. Spelers kunnen meerdere prefixen hebben en kiezen zelf welke actief is. Een prefix kan voor altijd gelden of na een aantal minuten verlopen.
+
+## Hoe het werkt
+
+Elke speler heeft altijd een actieve prefix. Heeft een speler geen eigen prefix gekozen, dan krijgt hij de standaardprefix uit `config.yml` (standaard `Zwerver`).
+
+De actieve prefix zie je in de chat via `<prefix>` in het chatformaat. Zie [Chat](/plugin/modules/chat). De kleur van de prefix stel je in bij [Kleuren](/plugin/modules/kleuren).
+
+Een speler met minstens één prefix krijgt ook punten voor zijn level. Zie [Levels en speeltijd](/plugin/modules/levels).
+
+### Het prefixmenu
+
+Met `/prefix` opent een speler het menu **Kies een prefix**.
+
+- Bovenaan staat de prefix die nu actief is, met een glans.
+- Daarna staan de andere prefixen van de speler. Klik op een prefix om hem te kiezen.
+- Heeft de speler een eigen prefix actief, dan staat de standaardprefix er ook tussen.
+
+Bij de andere prefixen staat of ze verlopen en wanneer.
+
+### Verlopen prefixen
+
+Verloopt de actieve prefix terwijl de speler online is, dan krijgt hij de melding `player_prefix_expired`. De plugin verwijdert de prefix en zet de speler terug op de standaardprefix.
+
+Verloopt de prefix terwijl de speler offline is, dan krijgt hij bij het inloggen de standaardprefix, zonder melding. De verlopen prefix blijft dan in het menu staan als vervallen.
+
+## Prefixen geven en afnemen
+
+Geef een speler een prefix met `/prefix add`:
+
+```
+/prefix add <speler> <minuten> <prefix>
+```
+
+Vul bij `<minuten>` het aantal minuten in dat de prefix geldig is. Met `-1` verloopt de prefix nooit. De nieuwe prefix wordt meteen geselecteerd. In de huidige versie wordt die keuze niet bewaard: na opnieuw inloggen heeft de speler weer de standaardprefix, tot hij de prefix zelf kiest in het menu. Heeft de speler de prefix al, dan krijg je de melding `prefix_already_exists`. Hoofdletters maken daarbij niet uit.
+
+Neem een prefix af met `/prefix remove <speler> <prefix>`.
+
+## Commando's
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/prefix` | Open het prefixmenu | Geen |
+| `/prefix help` | Toon de hulp met alle subcommando's | Geen |
+| `/prefix menu` | Open je eigen prefixmenu | Geen |
+| `/prefix menu <speler>` | Open het prefixmenu van een andere speler | `openminetopia.prefix.menu.others` |
+| `/prefix add <speler> <minuten> <prefix>` | Geef een speler een prefix. `-1` minuten is voor altijd | `openminetopia.prefix.add` |
+| `/prefix remove <speler> <prefix>` | Neem een prefix af | `openminetopia.prefix.remove` |
+
+Open je het menu van een andere speler en klik je op een prefix, dan wordt die prefix actief voor die speler.
+
+## Configuratie
+
+De standaardprefix en de standaardkleur staan in `config.yml`:
+
+```yaml
+default:
+  prefix: Zwerver
+  prefix-color: <gray>
+```
+
+| Sleutel | Standaard | Wat het doet |
+|---|---|---|
+| `default.prefix` | `Zwerver` | De prefix van spelers zonder eigen prefix |
+| `default.prefix-color` | `<gray>` | De kleur van de prefix als een speler geen prefixkleur heeft gekozen |
+
+## Meldingen
+
+Deze teksten pas je aan in `messages.yml`:
+
+| Sleutel | Wanneer |
+|---|---|
+| `prefix_added` | Je hebt een prefix gegeven |
+| `prefix_removed` | Je hebt een prefix afgenomen |
+| `prefix_not_found` | De speler heeft die prefix niet |
+| `prefix_already_exists` | De speler heeft die prefix al |
+| `player_prefix_expired` | De actieve prefix van de speler is verlopen |
+
+## Voor developers
+
+Kiest een speler een prefix in het menu, dan roept de plugin `PlayerChangePrefixEvent` aan. Annuleer je dit event, dan verandert de prefix niet.

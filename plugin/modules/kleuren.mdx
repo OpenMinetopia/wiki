@@ -1,0 +1,124 @@
+---
+title: "Kleuren"
+description: "Geef spelers kleuren voor hun prefix, naam, chat en level, en laat ze zelf kiezen welke kleur actief is."
+icon: "palette"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/modules/color/ (ColorModule.java, configuration/ColorsConfiguration.java, configuration/components/ColorComponent.java, commands/ColorCommand.java, commands/subcommands/*, menus/*, enums/OwnableColorType.java, objects/*, models/ColorModel.java), src/main/java/nl/openminetopia/api/player/objects/MinetopiaPlayer.java, src/main/java/nl/openminetopia/configuration/DefaultConfiguration.java, src/main/java/nl/openminetopia/utils/ChatUtils.java, src/main/resources/default/colors.yml, src/main/resources/default/messages.yml */}
+
+Spelers kunnen vier soorten kleuren hebben: een prefixkleur, een chatkleur, een naamkleur en een levelkleur. Jij bepaalt in `colors.yml` welke kleuren er bestaan. Je geeft een speler een kleur, en de speler kiest zelf welke kleur hij gebruikt.
+
+## Soorten kleuren
+
+| Soort | Type in commando's | Waar je het ziet |
+|---|---|---|
+| Prefixkleur | `PREFIX` | De kleur van `<prefix_color>`, voor de prefix |
+| Chatkleur | `CHAT` | De kleur van je chatbericht |
+| Naamkleur | `NAME` | De kleur van `<name_color>`, voor je naam |
+| Levelkleur | `LEVEL` | De kleur van `<level_color>`, voor je level |
+
+Waar deze placeholders staan, bepaal je zelf in het chatformaat en de scoreboard-regels. Zie [Chat](/plugin/modules/chat) en [Scoreboard en actionbar](/plugin/modules/scoreboard-actionbar).
+
+Heeft een speler voor een soort geen kleur gekozen, dan krijgt hij de standaardkleur uit `config.yml`.
+
+## Kleuren kiezen
+
+Met `/color` opent een speler het menu **Kies een kleurtype**. Daarin kiest hij een van de vier soorten. Met `/prefixkleur`, `/chatkleur`, `/naamkleur` en `/levelkleur` opent hij het menu van die soort direct.
+
+In het menu van een soort zie je:
+
+- **Standaard**: de standaardkleur uit `config.yml`. Deze verloopt nooit.
+- De kleuren van die soort die de speler heeft, met wanneer ze verlopen.
+- **Locked**: een overzicht van de kleuren die de speler nog niet heeft.
+
+Klik op een kleur om hem te kiezen.
+
+### Verlopen kleuren
+
+Je kunt een kleur voor een aantal minuten geven. Is een actieve kleur verlopen, dan krijgt de speler de melding `player_color_expired`. De plugin verwijdert de kleur en zet die soort terug op de standaardkleur.
+
+## Kleuren geven en afnemen
+
+Geef een speler een kleur met `/color add`:
+
+```
+/color add <speler> <type> <kleur> [minuten]
+```
+
+- `<type>` is `PREFIX`, `CHAT`, `NAME` of `LEVEL`.
+- `<kleur>` is de naam van een kleur uit `colors.yml`, bijvoorbeeld `gold_bold`.
+- `[minuten]` is hoe lang de kleur geldig is. Laat je het weg of vul je `-1` in, dan verloopt de kleur nooit.
+
+Een speler kan dezelfde kleur per soort maar één keer hebben. De nieuwe kleur wordt niet meteen actief: in de huidige versie zet de plugin die soort bij het geven terug op de standaardkleur. De speler kiest de kleur daarna zelf in het menu.
+
+Neem een kleur af met `/color remove <speler> <type> <kleur>`.
+
+## Commando's
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/color` | Open het menu om een kleurtype te kiezen | Geen |
+| `/color help` | Toon de hulp met alle subcommando's | Geen |
+| `/prefixkleur` | Open het menu voor je prefixkleur | Geen |
+| `/chatkleur` | Open het menu voor je chatkleur | Geen |
+| `/naamkleur` | Open het menu voor je naamkleur | Geen |
+| `/levelkleur` | Open het menu voor je levelkleur | Geen |
+| `/color add <speler> <type> <kleur> [minuten]` | Geef een speler een kleur | `openminetopia.color.add` |
+| `/color remove <speler> <type> <kleur>` | Neem een kleur af | `openminetopia.color.remove` |
+| `/color create <naam> <weergavenaam> <kleurcode>` | Voeg een nieuwe kleur toe aan `colors.yml` | `openminetopia.color.create` |
+
+De menucommando's hebben ook Engelse aliassen: `/prefixcolor`, `/chatcolor`, `/namecolor` en `/levelcolor`. `/color remove` en `/color create` werken alleen in-game, niet vanuit de console.
+
+## Configuratie
+
+### colors.yml
+
+In `colors.yml` staan alle kleuren die je kunt geven. Elke kleur heeft een naam, een `display_name` en een `color_prefix`. Beide gebruiken MiniMessage-opmaak, zoals `<gold>` of `<bold>`.
+
+```yaml
+colors:
+  gold:
+    display_name: "<gold>Goud"
+    color_prefix: "<gold>"
+  gold_bold:
+    display_name: "<bold><gold>Goud (Bold)"
+    color_prefix: "<bold><gold>"
+  rainbow:
+    display_name: "<rainbow>Rainbow"
+    color_prefix: "<rainbow>"
+```
+
+| Sleutel | Wat het doet |
+|---|---|
+| naam (bijvoorbeeld `gold`) | De naam die je gebruikt in `/color add` en `/color remove`. De plugin zet hem om naar kleine letters |
+| `display_name` | Hoe de kleur in de menu's heet |
+| `color_prefix` | De opmaak die de plugin voor de tekst zet |
+
+Het standaardbestand bevat deze kleuren, elk ook met een `_bold`-versie: `black`, `dark_blue`, `dark_green`, `dark_aqua`, `dark_red`, `dark_purple`, `gold`, `gray`, `dark_gray`, `blue`, `green`, `aqua`, `red`, `light_purple`, `yellow`, `white` en `rainbow`.
+
+Voeg een kleur toe door een blok aan `colors.yml` toe te voegen. Laad het bestand daarna opnieuw met `/openminetopia reload`. Zie [Configuratie](/plugin/configuratie).
+
+<Warning>
+`/color create` voegt de kleur direct toe, maar slaat in de huidige versie de `color_prefix` niet goed op in `colors.yml`. Voeg kleuren daarom liever zelf toe in `colors.yml`.
+</Warning>
+
+### Standaardkleuren in config.yml
+
+```yaml
+default:
+  prefix-color: <gray>
+  level-color: <gray>
+  name-color: <white>
+  chat-color: <white>
+```
+
+| Sleutel | Standaard | Wat het doet |
+|---|---|---|
+| `default.prefix-color` | `<gray>` | Standaard prefixkleur |
+| `default.level-color` | `<gray>` | Standaard levelkleur |
+| `default.name-color` | `<white>` | Standaard naamkleur |
+| `default.chat-color` | `<white>` | Standaard chatkleur |
+
+## Meldingen
+
+De meldingen van deze module staan in `messages.yml` en beginnen met `color_`. De namen van de vier soorten in de menu's pas je aan met `color_prefix_display_name`, `color_chat_display_name`, `color_name_display_name` en `color_level_display_name`. De melding bij een verlopen kleur is `player_color_expired`.

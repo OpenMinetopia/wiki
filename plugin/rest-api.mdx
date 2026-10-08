@@ -1,0 +1,564 @@
+---
+title: "REST API"
+description: "Gegevens van OpenMinetopia opvragen en aanpassen via HTTP, voor ontwikkelaars."
+icon: "server"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/modules/restapi/ (RestAPIModule.java, base/BaseVerticle.java, base/VerticleManager.java, verticles/MainVerticle.java, verticles/player/*, verticles/banking/*, verticles/banking/transactions/*, verticles/plots/PlotsVerticle.java, verticles/places/PlacesVerticle.java), src/main/java/nl/openminetopia/configuration/DefaultConfiguration.java (rest-api), src/main/java/nl/openminetopia/modules/banking/BankingModule.java (getAccountsFromPlayer), src/main/java/nl/openminetopia/modules/police/models/CriminalRecordModel.java, src/main/java/nl/openminetopia/modules/transactions/objects/TransactionModel.java, src/main/java/nl/openminetopia/modules/transactions/enums/TransactionType.java, src/main/java/nl/openminetopia/api/player/fitness/DefaultFitnessStatisticType.java, build.gradle.kts (Vert.x 5.0.5) */}
+
+OpenMinetopia heeft een ingebouwde HTTP-server. Daarmee vraag je spelers, bankrekeningen, plots en plaatsen op vanuit een website of een eigen tool. Je kunt ook geld storten of opnemen en plotleden aanpassen.
+
+De API is bedoeld voor ontwikkelaars. Hij draait op [Vert.x](https://vertx.io) en geeft JSON terug.
+
+## Aanzetten
+
+De API staat standaard uit. Zet hem aan in `config.yml`:
+
+```yaml
+rest-api:
+  enabled: false
+  host: "127.0.0.1"
+  port: 4567
+  api-key: "CHANGE-ME"
+```
+
+| Sleutel | Standaard | Wat het doet |
+|---|---|---|
+| `rest-api.enabled` | `false` | Zet de API aan. |
+| `rest-api.host` | `127.0.0.1` | Het adres waarop de server luistert. Met `127.0.0.1` kan alleen de machine zelf de API bereiken. Gebruik `0.0.0.0` om op alle adressen te luisteren. |
+| `rest-api.port` | `4567` | De poort van de server. |
+| `rest-api.api-key` | `CHANGE-ME` | De sleutel die elke request moet meesturen. |
+
+<Steps>
+  <Step title="Kies een sleutel">
+    Vervang `CHANGE-ME` door een lange, willekeurige sleutel. Iedereen met deze sleutel kan geld storten en opnemen.
+  </Step>
+  <Step title="Zet de API aan">
+    Zet `rest-api.enabled` op `true`.
+  </Step>
+  <Step title="Herstart de server">
+    De HTTP-server start alleen bij het opstarten van de plugin. Na een herstart zie je in de console `HTTP server started on port 4567 and host 127.0.0.1`.
+  </Step>
+</Steps>
+
+Een nieuwe `api-key` werkt na `/omt reload`, omdat de sleutel bij elke request opnieuw wordt gelezen. Voor `enabled`, `host` en `port` moet je de server herstarten.
+
+De API hoort bij de module `restapi`. Staat die in `disabled-modules`, dan start de API ook niet. Zie [Configuratie](/plugin/configuratie).
+
+<Warning>
+De server spreekt alleen HTTP, geen HTTPS. Moet de API van buitenaf bereikbaar zijn, zet er dan een reverse proxy met HTTPS voor. Anders gaat je API-sleutel onversleuteld over het internet.
+</Warning>
+
+## Authenticatie
+
+Stuur bij elke request de header `X-API-Key` mee. De waarde moet precies gelijk zijn aan `rest-api.api-key`.
+
+```bash
+curl -H "X-API-Key: jouw-sleutel" http://127.0.0.1:4567/api/places/worlds
+```
+
+Ontbreekt de header of klopt hij niet, dan krijg je status `401` met de platte tekst `Unauthorized request`. Dat geldt voor elk pad, ook voor paden die niet bestaan.
+
+## Antwoorden
+
+Elk antwoord is een JSON-object met `success` (boolean). Gaat er iets mis, dan staat er ook `error` (string) in.
+
+```json
+{
+  "success": false,
+  "error": "Account not found."
+}
+```
+
+Let op twee dingen:
+
+- De API zet geen `Content-Type`-header. Parse het antwoord zelf als JSON.
+- Bij de speler-endpoints en bij `GET /api/plots` is de HTTP-status ook bij een fout `200`. Kijk daar dus naar `success`, niet naar de status.
+
+Tijden zijn Unix-tijdstempels in milliseconden. Een `expires_at` van `-1` betekent dat iets nooit verloopt.
+
+## Endpoints
+
+| Methode | Pad | Wat het doet |
+|---|---|---|
+| `GET` | `/api/player/{uuid}` | Basisgegevens van een speler |
+| `GET` | `/api/player/{uuid}/prefixes` | Prefixen van een speler |
+| `GET` | `/api/player/{uuid}/colors` | Kleuren van een speler |
+| `GET` | `/api/player/{uuid}/fitness` | Fitheid van een speler |
+| `GET` | `/api/player/{uuid}/criminalrecords` | Strafblad van een speler |
+| `GET` | `/api/player/{uuid}/bankaccounts` | Bankrekeningen van een speler |
+| `GET` | `/api/player/{uuid}/plots` | Plots van een speler |
+| `GET` | `/api/bankaccounts/` | Alle bankrekeningen |
+| `GET` | `/api/bankaccount/{uuid}` | Eén bankrekening |
+| `GET` | `/api/bankaccount/{uuid}/users` | Gebruikers van een rekening |
+| `GET` | `/api/bankaccount/{uuid}/transactions` | Transacties van een rekening |
+| `POST` | `/api/bankaccount/{uuid}/deposit` | Geld storten |
+| `POST` | `/api/bankaccount/{uuid}/withdraw` | Geld opnemen |
+| `GET` | `/api/plots` | Alle plots |
+| `GET` | `/api/plots/{id}` | Eén plot |
+| `POST` | `/api/plots/{id}/owners/add` | Eigenaar toevoegen |
+| `POST` | `/api/plots/{id}/owners/remove` | Eigenaar verwijderen |
+| `POST` | `/api/plots/{id}/members/add` | Lid toevoegen |
+| `POST` | `/api/plots/{id}/members/remove` | Lid verwijderen |
+| `GET` | `/api/places/worlds` | Alle geregistreerde werelden |
+| `GET` | `/api/places/cities` | Alle steden |
+
+## Spelers
+
+Alle speler-endpoints gebruiken de UUID van de speler als `{uuid}`, met streepjes.
+
+Deze fouten gelden voor alle speler-endpoints. De HTTP-status is daarbij `200`.
+
+| `error` | Wanneer |
+|---|---|
+| `Player has not played before.` | De speler is nooit op de server geweest. |
+| `MinetopiaPlayer has not loaded.` | De gegevens van de speler konden niet geladen worden. |
+| De foutmelding van Java | De UUID is ongeldig, of er ging iets anders mis. |
+
+### GET /api/player/\{uuid\}
+
+Geeft de basisgegevens van een speler.
+
+| Veld | Type | Inhoud |
+|---|---|---|
+| `uuid` | string | UUID van de speler |
+| `level` | number | Huidig level |
+| `calculated_level` | number | Berekend level |
+| `fitness` | number | Totale fitheid |
+| `active_prefix` | string | Actieve prefix |
+| `active_prefix_color` | string | Weergavenaam van de actieve prefixkleur |
+| `active_name_color` | string | Weergavenaam van de actieve naamkleur |
+| `active_level_color` | string | Weergavenaam van de actieve levelkleur |
+| `active_chat_color` | string | Weergavenaam van de actieve chatkleur |
+| `playtimeSeconds` | number | Speeltijd in seconden |
+| `online` | boolean | Of de speler nu online is |
+
+```json
+{
+  "success": true,
+  "uuid": "069a79f4-44e9-4726-a5be-fca90e38aaf5",
+  "level": 5,
+  "calculated_level": 7,
+  "fitness": 42,
+  "active_prefix": "Zwerver",
+  "active_prefix_color": "<gray>Default",
+  "active_name_color": "<gray>Default",
+  "active_level_color": "<gray>Default",
+  "active_chat_color": "<gray>Default",
+  "playtimeSeconds": 86400,
+  "online": true
+}
+```
+
+### GET /api/player/\{uuid\}/prefixes
+
+Geeft alle prefixen van een speler. `prefixes` is een object met het ID van de prefix als sleutel.
+
+| Veld | Type | Inhoud |
+|---|---|---|
+| `prefixes.<id>.prefix` | string | De tekst van de prefix |
+| `prefixes.<id>.expires_at` | number | Wanneer de prefix verloopt, of `-1` |
+
+```json
+{
+  "success": true,
+  "prefixes": {
+    "12": { "prefix": "Agent", "expires_at": -1 }
+  }
+}
+```
+
+### GET /api/player/\{uuid\}/colors
+
+Geeft alle kleuren van een speler. `colors` is een object met het ID van de kleur als sleutel.
+
+| Veld | Type | Inhoud |
+|---|---|---|
+| `colors.<id>.display_name` | string | Weergavenaam van de kleur |
+| `colors.<id>.color` | string | De kleurcode, bijvoorbeeld `<gold>` |
+| `colors.<id>.expires_at` | number | Wanneer de kleur verloopt, of `-1` |
+| `colors.<id>.type` | string | `PREFIX`, `CHAT`, `NAME` of `LEVEL` |
+| `colors.<id>.hex_value` | string | De kleur als hexcode |
+
+```json
+{
+  "success": true,
+  "colors": {
+    "3": {
+      "display_name": "<gold>Goud",
+      "color": "<gold>",
+      "expires_at": -1,
+      "type": "CHAT",
+      "hex_value": "#ffaa00"
+    }
+  }
+}
+```
+
+### GET /api/player/\{uuid\}/fitness
+
+Geeft de fitheid van een speler. `statistics` is een object met het type statistiek als sleutel, zoals `WALKING`, `SPRINTING`, `CLIMBING`, `SWIMMING`, `FLYING`, `DRINKING`, `EATING` en `HEALTH`. De request vraagt ook een nieuwe berekening van de fitheid aan.
+
+| Veld | Type | Inhoud |
+|---|---|---|
+| `statistics.<type>.gained` | number | Fitheid die met deze statistiek is behaald |
+| `statistics.<type>.maximum` | number | Maximale fitheid voor deze statistiek |
+| `statistics.<type>.points` | number | Punten voor deze statistiek |
+| `statistics.<type>.secondary_points` | number | Tweede soort punten |
+| `statistics.<type>.tertiary_points` | number | Derde soort punten |
+| `total_fitness` | number | Totale fitheid |
+
+```json
+{
+  "success": true,
+  "statistics": {
+    "WALKING": {
+      "gained": 3,
+      "maximum": 20,
+      "points": 0.0,
+      "secondary_points": 0.0,
+      "tertiary_points": 0.0
+    }
+  },
+  "total_fitness": 23
+}
+```
+
+### GET /api/player/\{uuid\}/criminalrecords
+
+Geeft het strafblad van een speler in het object `criminalrecords`.
+
+| Veld | Type | Inhoud |
+|---|---|---|
+| `criminalrecords.<sleutel>.reason` | string | Omschrijving |
+| `criminalrecords.<sleutel>.date` | number | Datum van de regel |
+| `criminalrecords.<sleutel>.officer` | string | UUID van de agent |
+
+<Warning>
+De sleutel van elke regel is in de huidige versie de tekstweergave van het hele record-object, geen ID. Gebruik de sleutel niet om regels terug te vinden. Lees alleen de waarden.
+</Warning>
+
+### GET /api/player/\{uuid\}/bankaccounts
+
+Geeft de privérekening van een speler en alle rekeningen waar hij gebruiker van is. `accounts` is een object met de UUID van de rekening als sleutel.
+
+| Veld | Type | Inhoud |
+|---|---|---|
+| `accounts.<uuid>.type` | string | `PRIVATE`, `COMPANY`, `SAVINGS` of `GOVERNMENT` |
+| `accounts.<uuid>.name` | string | Naam van de rekening |
+| `accounts.<uuid>.frozen` | boolean | Of de rekening bevroren is |
+| `accounts.<uuid>.balance` | number | Saldo |
+
+`success` is `false` als de speler geen privérekening heeft. `accounts` staat er dan wel in, met de andere rekeningen.
+
+```json
+{
+  "success": true,
+  "accounts": {
+    "069a79f4-44e9-4726-a5be-fca90e38aaf5": {
+      "type": "PRIVATE",
+      "name": "Notch",
+      "frozen": false,
+      "balance": 1500.0
+    }
+  }
+}
+```
+
+### GET /api/player/\{uuid\}/plots
+
+Geeft de plots waar een speler eigenaar of lid van is. `plots` is een object met de naam van de regio als sleutel. Elke plot heeft dezelfde velden als bij `GET /api/plots` verderop, plus:
+
+| Veld | Type | Inhoud |
+|---|---|---|
+| `plots.<id>.permission` | string | `OWNER` of `MEMBER` |
+
+<Note>
+In de huidige versie bevat deze lijst ook WorldGuard-regio's die geen plot zijn, als de speler daar lid van is.
+</Note>
+
+## Bankrekeningen
+
+### GET /api/bankaccounts/
+
+Geeft alle bankrekeningen als lijst. Let op de `/` aan het eind van het pad.
+
+| Veld | Type | Inhoud |
+|---|---|---|
+| `accounts[].uuid` | string | UUID van de rekening |
+| `accounts[].type` | string | `PRIVATE`, `COMPANY`, `SAVINGS` of `GOVERNMENT` |
+| `accounts[].name` | string | Naam van de rekening |
+| `accounts[].frozen` | boolean | Of de rekening bevroren is |
+| `accounts[].balance` | number | Saldo |
+
+```json
+{
+  "success": true,
+  "accounts": [
+    {
+      "uuid": "6f1c2a0e-3b7d-4c55-9a51-2d8e4f6a7b90",
+      "type": "COMPANY",
+      "name": "Bakkerij",
+      "frozen": false,
+      "balance": 250.0
+    }
+  ]
+}
+```
+
+| Status | `error` | Wanneer |
+|---|---|---|
+| `404` | `No accounts found.` | Er zijn geen rekeningen. |
+| `500` | `Internal server error.` | De rekeningen konden niet geladen worden. |
+
+### GET /api/bankaccount/\{uuid\}
+
+Geeft één rekening. `{uuid}` is de UUID van de rekening. De privérekening van een speler heeft dezelfde UUID als de speler.
+
+```json
+{
+  "success": true,
+  "uuid": "6f1c2a0e-3b7d-4c55-9a51-2d8e4f6a7b90",
+  "type": "COMPANY",
+  "name": "Bakkerij",
+  "frozen": false,
+  "balance": 250.0
+}
+```
+
+De velden zijn dezelfde als bij `GET /api/bankaccounts/`.
+
+### GET /api/bankaccount/\{uuid\}/users
+
+Geeft de gebruikers van een rekening. `users` is een object met de UUID van de speler als sleutel.
+
+| Veld | Type | Inhoud |
+|---|---|---|
+| `users.<uuid>.permission` | string | `DEPOSIT`, `WITHDRAW` of `ADMIN` |
+
+```json
+{
+  "success": true,
+  "users": {
+    "069a79f4-44e9-4726-a5be-fca90e38aaf5": { "permission": "ADMIN" }
+  }
+}
+```
+
+### GET /api/bankaccount/\{uuid\}/transactions
+
+Geeft de transacties van een rekening, de nieuwste eerst.
+
+| Veld | Type | Inhoud |
+|---|---|---|
+| `transactions[].username` | string | Naam van wie de transactie deed |
+| `transactions[].uuid` | UUID | UUID van wie de transactie deed |
+| `transactions[].type` | string | `DEPOSIT`, `WITHDRAW` of `SET` |
+| `transactions[].amount` | number | Bedrag |
+| `transactions[].time` | number | Tijdstip |
+| `transactions[].bank_account` | UUID | UUID van de rekening |
+| `transactions[].description` | string | Omschrijving |
+
+<Warning>
+In de huidige versie schrijft de API `uuid` en `bank_account` zonder aanhalingstekens. Het antwoord is daardoor geen geldige JSON en een gewone JSON-parser geeft een fout. Zet de waarden zelf tussen aanhalingstekens voordat je parst, of gebruik deze endpoint nog niet.
+</Warning>
+
+### Fouten bij één rekening
+
+Deze fouten gelden voor alle endpoints onder `/api/bankaccount/{uuid}`.
+
+| Status | `error` | Wanneer |
+|---|---|---|
+| `400` | `Invalid UUID format.` | `{uuid}` is geen geldige UUID. |
+| `404` | `Account not found.` | Er is geen rekening met deze UUID. |
+| `500` | `Internal server error.` | De rekening kon niet geladen worden. |
+
+### POST /api/bankaccount/\{uuid\}/deposit
+
+Stort geld op een rekening.
+
+Stuur een JSON-body met het bedrag:
+
+```json
+{ "amount": 100 }
+```
+
+| Veld | Type | Inhoud |
+|---|---|---|
+| `amount` | number of string | Het bedrag. Moet groter zijn dan 0. |
+
+Antwoord:
+
+```json
+{
+  "success": true,
+  "newBalance": 350.0
+}
+```
+
+### POST /api/bankaccount/\{uuid\}/withdraw
+
+Neemt geld op van een rekening. De body en het antwoord zijn hetzelfde als bij `deposit`.
+
+Naast de fouten bij één rekening kunnen deze twee endpoints ook geven:
+
+| Status | `error` | Wanneer |
+|---|---|---|
+| `400` | `Invalid amount.` | `amount` ontbreekt, is geen getal of is 0 of minder. |
+| `400` | `Insufficient balance.` | Alleen bij `withdraw`: het saldo is lager dan het bedrag. |
+
+<Note>
+Storten en opnemen via de API controleren niet of een rekening bevroren is. Ze maken ook geen transactie aan in de transactiegeschiedenis.
+</Note>
+
+## Plots
+
+Een plot is een WorldGuard-regio. `{id}` is de naam van de regio. De API zoekt in alle werelden, en alleen in regio's met een prioriteit van 0 of hoger.
+
+### GET /api/plots
+
+Geeft alle plots: regio's met de flag `openmt-plot`. `plots` is een object met de naam van de regio als sleutel.
+
+| Veld | Type | Inhoud |
+|---|---|---|
+| `plots.<id>.priority` | number | Prioriteit van de regio |
+| `plots.<id>.owners` | array van strings | UUID's van de eigenaren |
+| `plots.<id>.members` | array van strings | UUID's van de leden |
+| `plots.<id>.flags` | object | Alle WorldGuard-flags van de regio, met de waarde als tekst |
+| `plots.<id>.description` | string | Beschrijving. Alleen aanwezig als de plot er een heeft. |
+| `plots.<id>.location.min` | object | Laagste hoek: `x`, `y`, `z` |
+| `plots.<id>.location.max` | object | Hoogste hoek: `x`, `y`, `z` |
+
+```json
+{
+  "success": true,
+  "plots": {
+    "winkel1": {
+      "priority": 0,
+      "owners": ["069a79f4-44e9-4726-a5be-fca90e38aaf5"],
+      "members": [],
+      "flags": { "openmt-plot": "ALLOW", "openmt-description": "Bakkerij" },
+      "description": "Bakkerij",
+      "location": {
+        "min": { "x": 100, "y": -64, "z": 200 },
+        "max": { "x": 120, "y": 319, "z": 220 }
+      }
+    }
+  }
+}
+```
+
+Gaat er iets mis, dan krijg je `success: false` met de foutmelding in `error`, en status `200`.
+
+### GET /api/plots/\{id\}
+
+Geeft één regio in het veld `plot`, met dezelfde velden als hierboven. Deze endpoint controleert niet of de regio de flag `openmt-plot` heeft.
+
+```json
+{
+  "success": true,
+  "plot": {
+    "priority": 0,
+    "owners": ["069a79f4-44e9-4726-a5be-fca90e38aaf5"],
+    "members": [],
+    "flags": { "openmt-plot": "ALLOW" },
+    "location": {
+      "min": { "x": 100, "y": -64, "z": 200 },
+      "max": { "x": 120, "y": 319, "z": 220 }
+    }
+  }
+}
+```
+
+| Status | `error` | Wanneer |
+|---|---|---|
+| `404` | `Region not found.` | Er is geen regio met deze naam. |
+| `500` | `An error occurred while retrieving the plot: ...` | Er ging iets anders mis. |
+
+### Eigenaren en leden aanpassen
+
+| Methode | Pad | Wat het doet |
+|---|---|---|
+| `POST` | `/api/plots/{id}/owners/add` | Maakt een speler eigenaar |
+| `POST` | `/api/plots/{id}/owners/remove` | Haalt een eigenaar weg |
+| `POST` | `/api/plots/{id}/members/add` | Maakt een speler lid |
+| `POST` | `/api/plots/{id}/members/remove` | Haalt een lid weg |
+
+Stuur de UUID van de speler als JSON-body. Zonder body met `uuid` mislukt de request.
+
+```json
+{ "uuid": "069a79f4-44e9-4726-a5be-fca90e38aaf5" }
+```
+
+Antwoord:
+
+```json
+{ "success": true }
+```
+
+| Status | `error` | Wanneer |
+|---|---|---|
+| `400` | `Invalid UUID format.` | `uuid` is geen geldige UUID. |
+| `404` | `Region not found.` | Er is geen regio met deze naam. |
+| `500` | `An error occurred while modifying the region: ...` | Er ging iets anders mis. |
+
+Ook deze endpoints controleren niet of de regio een plot is.
+
+## Plaatsen
+
+Zie [Plaatsen](/plugin/modules/plaatsen) voor wat werelden en steden zijn.
+
+### GET /api/places/worlds
+
+Geeft alle geregistreerde werelden.
+
+| Veld | Type | Inhoud |
+|---|---|---|
+| `worlds[].name` | string | Naam van de wereld |
+| `worlds[].color` | string | Kleur |
+| `worlds[].title` | string | Titel |
+| `worlds[].loading_name` | string | Laadnaam |
+| `worlds[].temperature` | number | Temperatuur |
+
+```json
+{
+  "success": true,
+  "worlds": [
+    {
+      "name": "world",
+      "color": "<gold>",
+      "title": "<bold>MINETOPIA",
+      "loading_name": "Minetopia",
+      "temperature": 21.64
+    }
+  ]
+}
+```
+
+Bij een fout: status `500` met `Failed to retrieve worlds.`
+
+### GET /api/places/cities
+
+Geeft alle steden. De velden zijn dezelfde als bij werelden, plus:
+
+| Veld | Type | Inhoud |
+|---|---|---|
+| `cities[].world` | string | Naam van de wereld waar de stad in ligt, of `Unknown` |
+
+```json
+{
+  "success": true,
+  "cities": [
+    {
+      "name": "centrum",
+      "color": "<gold>",
+      "title": "<bold>CENTRUM",
+      "loading_name": "Centrum",
+      "temperature": 21.64,
+      "world": "world"
+    }
+  ]
+}
+```
+
+Bij een fout: status `500` met `Failed to retrieve cities.`

@@ -1,0 +1,224 @@
+---
+title: "Bankieren"
+description: "Bankrekeningen, pinautomaten, pinterminals, transactiegeschiedenis en Vault-koppeling."
+icon: "building-columns"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/modules/banking/ (BankingModule.java, commands/*, menus/*, listeners/*, manager/PinTerminalManager.java, vault/VaultEconomyHandler.java, configuration/BankingConfiguration.java, enums/*, models/*), src/main/java/nl/openminetopia/modules/transactions/ (TransactionsModule.java, commands/TransactionCommand.java, enums/TransactionType.java, objects/TransactionModel.java, events/TransactionUpdateEvent.java), src/main/java/nl/openminetopia/utils/placeholderapi/OpenMinetopiaExpansion.java, src/main/java/nl/openminetopia/utils/ChatUtils.java, src/main/resources/default/banking.yml, src/main/resources/default/messages.yml, src/main/resources/paper-plugin.yml */}
+
+Met de bankmodule hebben spelers geld op een bankrekening. Ze nemen geld op en storten het bij een pinautomaat, en betalen elkaar via een pinterminal. Alle bedragen zijn in euro.
+
+## Rekeningtypes
+
+Er zijn vier soorten rekeningen.
+
+| Type | Naam in-game | Blok in het menu | Hoe kom je eraan |
+|---|---|---|---|
+| `PRIVATE` | Privérekening | Goudblok | Automatisch, één per speler |
+| `COMPANY` | Bedrijfsrekening | Diamantblok | Aanmaken met `/rekening create company <naam>` |
+| `SAVINGS` | Spaarrekening | Redstoneblok | Aanmaken met `/rekening create savings <naam>` |
+| `GOVERNMENT` | Overheidsrekening | Smaragdblok | Aanmaken met `/rekening create government <naam>` |
+
+De namen van de types pas je aan in `messages.yml` (`banking_private_account`, `banking_company_account`, `banking_savings_account`, `banking_government_account`). Zet daar geen kleurcodes in. De plugin geeft de namen in de menu's zelf een kleur, en `messages.yml` meldt dat kleuren daar niet ondersteund worden.
+
+### De privérekening
+
+Elke speler krijgt bij de eerste keer joinen automatisch een privérekening. Die rekening heeft de spelersnaam als naam en start met het bedrag uit `starting-balance`. Je kunt zelf geen privérekening aanmaken.
+
+De privérekening is het saldo dat overal als "jouw geld" telt: bij Vault, bij de placeholders, bij pinbetalingen en bij het salaris. Het salaris stel je in bij [Levels](/plugin/modules/levels).
+
+### Andere rekeningen
+
+Bedrijfs-, spaar- en overheidsrekeningen maak je aan met `/rekening create`. Een nieuwe rekening heeft een saldo van 0 en nog geen gebruikers. Ook degene die de rekening aanmaakt is geen gebruiker. Voeg spelers toe met `/rekening adduser`.
+
+Een rekeningnaam:
+
+- is 3 tot 24 tekens lang;
+- bevat alleen letters, cijfers en underscores (`_`), dus geen spaties;
+- is nog niet in gebruik. De plugin controleert alleen ingeladen rekeningen, dus niet de privérekeningen van offline spelers.
+
+## Rechten op een rekening
+
+Elke gebruiker van een rekening heeft één recht.
+
+| Recht | Wat de speler mag |
+|---|---|
+| `DEPOSIT` | Geld storten |
+| `WITHDRAW` | Geld opnemen |
+| `ADMIN` | Storten, opnemen en de transacties van de rekening bekijken |
+
+Een speler met `DEPOSIT` kan dus geen geld opnemen, en een speler met `WITHDRAW` kan niet storten. Op zijn eigen privérekening heeft een speler altijd `ADMIN`.
+
+## De pinautomaat
+
+Een pinautomaat is een blok uit de lijst `atm-materials` in `banking.yml`. Standaard is dat `RED_SANDSTONE_STAIRS`. Klik op zo'n blok om de bank te openen. Met `/rekening open` open je hetzelfde menu.
+
+<Steps>
+  <Step title="Kies een type">
+    Je ziet de vier rekeningtypes. Klik op een type. Heb je geen rekening van dat type, dan krijg je een melding.
+  </Step>
+  <Step title="Kies een rekening">
+    Je ziet alle rekeningen van dat type waar je gebruiker van bent. Klik met linkermuis om de rekening te openen. Heb je `ADMIN` op de rekening, dan opent rechtermuis de transactiegeschiedenis.
+  </Step>
+  <Step title="Opnemen of storten">
+    Het saldo staat als bankbiljetten in het menu. Zie hieronder.
+  </Step>
+</Steps>
+
+### Opnemen en storten
+
+Het saldo van de rekening staat bovenin het menu als stapels bankbiljetten. Op de onderste rij staat van elk biljet er één.
+
+- **Opnemen:** klik op een biljet of een stapel in het menu. Je krijgt die biljetten in je inventory en het bedrag gaat van de rekening af. Je hebt `WITHDRAW` of `ADMIN` nodig.
+- **Storten:** klik terwijl het menu open is op bankbiljetten in je eigen inventory. De hele stapel wordt gestort. Je hebt `DEPOSIT` of `ADMIN` nodig.
+
+Alleen biljetten die uit een pinautomaat komen tellen. Een gewone diamant is geen biljet van €200. De biljetten en hun waarde stel je in onder `notes` in `banking.yml`.
+
+## De pinterminal
+
+Met een pinterminal laat een speler een andere speler betalen. Het geld gaat van de privérekening van de betaler naar een bedrijfs- of overheidsrekening. Een pinterminal is een blok uit `pin-terminal-materials`. Standaard is dat `PURPUR_STAIRS`.
+
+<Steps>
+  <Step title="Verzoek starten">
+    De ontvanger klikt met rechtermuis op een pinterminal. Hij moet gebruiker zijn van minstens één bedrijfs- of overheidsrekening.
+  </Step>
+  <Step title="Rekening kiezen">
+    De ontvanger kiest in het menu op welke rekening het geld moet komen.
+  </Step>
+  <Step title="Bedrag en speler typen">
+    De ontvanger typt het bedrag in de chat. Het bedrag moet groter zijn dan 0. Daarna typt hij de naam van de speler die moet betalen. Die speler moet online zijn en binnen `pin-transaction-max-distance` blokken van de terminal staan.
+  </Step>
+  <Step title="Betalen">
+    De betaler krijgt het verzoek in de chat. Rechtermuis op de pinterminal betaalt, linkermuis weigert. De betaler moet klikken op de terminal waar het verzoek is gestart, of op een terminal binnen de maximale afstand daarvan.
+  </Step>
+</Steps>
+
+- Heeft de betaler te weinig saldo, dan wordt de betaling geannuleerd.
+- Beide spelers kunnen een lopend verzoek annuleren met linkermuis op een pinterminal.
+- Na `pin-transaction-timeout-seconds` seconden (standaard 60) verloopt het verzoek.
+
+## Commando's
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/rekening` | Toont de lijst met subcommando's | Geen |
+| `/rekening open` | Opent het bankmenu, net als een pinautomaat | `openminetopia.banking.open` |
+| `/rekening create <type> <naam>` | Maakt een rekening aan. Type is `company`, `savings` of `government` | `openminetopia.banking.create` |
+| `/rekening delete <naam>` | Verwijdert een rekening en al haar gebruikers | `openminetopia.banking.delete` |
+| `/rekening adduser <speler> <rekening> <recht>` | Voegt een gebruiker toe. Recht is `deposit`, `withdraw` of `admin` | `openminetopia.banking.adduser` |
+| `/rekening removeuser <speler> <rekening>` | Haalt een gebruiker van een rekening | `openminetopia.banking.removeuser` |
+| `/rekening setbalance <rekening> <bedrag>` | Zet het saldo van een rekening op een bedrag | `openminetopia.banking.setbalance` |
+| `/rekening freeze <rekening>` | Zet een rekening op bevroren, of haalt die status weer weg | `openminetopia.banking.freeze` |
+| `/rekening info <rekening>` | Toont naam, ID, bevroren-status, saldo en gebruikers van een rekening | `openminetopia.banking.info` |
+| `/rekening list` | Opent een menu met alle ingeladen rekeningen en hun gebruikers | `openminetopia.banking.list` |
+| `/transacties <rekening>` | Opent de transactiegeschiedenis van een rekening | `openminetopia.transactions` |
+
+<Info>
+`/rekening` heeft ook de aliassen `/account` en `/accounts`. `/transacties` heeft de alias `/transactions`.
+</Info>
+
+- `/rekening open`, `/rekening list`, `/rekening delete` en `/transacties` werken alleen in-game.
+- `/rekening list` toont gebruikers als UUID, niet als naam.
+
+<Note>
+Een bevroren rekening blokkeert in deze versie nog geen stortingen, opnames of betalingen. De status is alleen zichtbaar in `/rekening info` en in de [REST API](/plugin/rest-api).
+</Note>
+
+## Transacties
+
+OpenMinetopia houdt een logboek bij van transacties op rekeningen. Per transactie slaat de plugin de tijd, de speler, het type, het bedrag, de rekening en een omschrijving op.
+
+| Actie | Type | Door |
+|---|---|---|
+| Storten bij een pinautomaat | `DEPOSIT` | De speler |
+| Opnemen bij een pinautomaat | `WITHDRAW` | De speler |
+| `/rekening setbalance` | `SET` | De speler, of `Console` |
+| Storten of opnemen via Vault | `DEPOSIT` / `WITHDRAW` | `Server` |
+
+Pinbetalingen, het salaris, de kosten van een levelcheck en wijzigingen via de [REST API](/plugin/rest-api) komen niet in het logboek.
+
+Bekijk de geschiedenis met `/transacties <rekening>`, of met rechtermuis op een rekening in het bankmenu als je `ADMIN` bent. Het menu laadt maximaal 250 transacties en toont die met de nieuwste eerst. Heeft een rekening meer dan 250 transacties, dan zijn dat niet per se de 250 nieuwste. Per transactie zie je het type, de datum, het bedrag en wie de transactie deed.
+
+<Tip>
+Ontwikkelaars kunnen luisteren naar `TransactionUpdateEvent`. Die wordt afgevuurd bij storten en opnemen bij een pinautomaat, bij `/rekening setbalance`, bij Vault en bij het salaris. Annuleer je het event, dan gaat de transactie niet door.
+</Tip>
+
+## Vault
+
+Staat Vault op je server, dan registreert OpenMinetopia zich als Vault-economy. In de console zie je dan `Registered Vault economy handler.` Andere plugins die Vault gebruiken werken zo met het geld van OpenMinetopia.
+
+- Het Vault-saldo van een speler is het saldo van zijn **privérekening**.
+- Bedrijfs-, spaar- en overheidsrekeningen zijn niet via Vault bereikbaar. De bank-functies van Vault zijn niet geïmplementeerd.
+- Bedragen worden opgemaakt met `economy-format`, met een `€` ervoor. De valutanaam is `€` in het enkelvoud en `euro` in het meervoud.
+- Vault controleert bij opnemen niet zelf of er genoeg saldo is. De plugin die opneemt moet dat eerst checken.
+
+<Warning>
+Vault werkt het best met online spelers. Voor een offline speler geeft Vault een saldo van `-1` terug. Storten of opnemen bij een offline speler meldt Vault als mislukt, maar de wijziging wordt op de achtergrond wel op zijn rekening uitgevoerd.
+</Warning>
+
+## Placeholders
+
+| Placeholder | Waarde |
+|---|---|
+| `%openminetopia_balance%` | Saldo van de privérekening, als getal |
+| `%openminetopia_balance_formatted%` | Saldo van de privérekening, opgemaakt met `economy-format` en `€` |
+
+In teksten van OpenMinetopia zelf, zoals het scoreboard en het chatformaat, gebruik je `<balance>` en `<balance_formatted>`. Zie [Placeholders](/plugin/placeholders) voor het volledige overzicht.
+
+## Configuratie
+
+De instellingen staan in `banking.yml`. Dit is het standaardbestand:
+
+```yaml
+banking:
+  economy-format: '#,##0.00'
+  atm-materials:
+    - RED_SANDSTONE_STAIRS
+  pin-transaction-timeout-seconds: 60
+  pin-transaction-max-distance: 10.0
+  starting-balance: 0.0
+  inventories:
+    select-type-title: '<gray>Selecteer het rekeningtype:'
+    select-account-title: <type_color><type_name>
+    account-contents-title: <type_color><account_name> <reset>| <gold><account_balance>
+  notes:
+    EMERALD: 50.0
+    REDSTONE: 100.0
+    GOLD_NUGGET: 0.1
+    DIAMOND: 200.0
+    IRON_INGOT: 10.0
+    GHAST_TEAR: 500.0
+    COAL: 20.0
+    GOLD_INGOT: 1.0
+    QUARTZ: 5.0
+  lore:
+    - <yellow>Officieel Minetopia bankbiljet.
+    - <yellow>Eigendom van de Centrale Bank.
+```
+
+| Key | Standaard | Uitleg |
+|---|---|---|
+| `economy-format` | `#,##0.00` | Opmaak van bedragen. De punt is het duizendtal-teken en de komma het decimaalteken, dus `€1.234,56`. Een wijziging werkt pas na een herstart. |
+| `atm-materials` | `RED_SANDSTONE_STAIRS` | Blokken die als pinautomaat werken. |
+| `pin-terminal-materials` | `PURPUR_STAIRS` | Blokken die als pinterminal werken. |
+| `pin-transaction-timeout-seconds` | `60` | Na hoeveel seconden een pinverzoek verloopt. |
+| `pin-transaction-max-distance` | `10` | Maximale afstand in blokken tussen de pinterminal en de betaler. Bij `0` of lager geldt geen maximum. |
+| `starting-balance` | `0` | Startsaldo van een nieuwe privérekening. |
+| `notes` | Zie hierboven | De bankbiljetten: per materiaal de waarde in euro. |
+| `lore` | Zie hierboven | De lore-regels op een opgenomen bankbiljet. |
+
+<Note>
+`pin-terminal-materials` staat niet in het bestand dat de plugin meelevert. Bij de eerste start zet de plugin de key zelf onderaan `banking:`, met de standaardwaarde. Daar pas je hem aan:
+
+```yaml
+banking:
+  pin-terminal-materials:
+    - PURPUR_STAIRS
+```
+</Note>
+
+<Note>
+De keys onder `inventories` staan in het bestand, maar worden in deze versie niet gebruikt. De titel van het typemenu pas je aan met `banking_select_account_type` in `messages.yml`.
+</Note>
+
+Ongeldige materialen in `atm-materials`, `pin-terminal-materials` of `notes` worden overgeslagen, met een waarschuwing in de console. Na een wijziging in `banking.yml` laad je het bestand opnieuw met `/openminetopia reload`.

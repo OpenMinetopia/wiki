@@ -1,0 +1,186 @@
+---
+title: "Levels en speeltijd"
+description: "Hoe het level van een speler wordt berekend, hoe de levelcheck werkt en hoe speeltijd en salaris werken."
+icon: "arrow-trend-up"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/modules/player/ (PlayerModule.java, configuration/LevelCheckConfiguration.java, utils/LevelUtil.java, utils/PlaytimeUtil.java, runnables/*, commands/PlaytimeCommand.java, listeners/LevelcheckNpcListener.java, models/PlayerModel.java, events/*), src/main/java/nl/openminetopia/modules/banking/tasks/WagePaymentTask.java, src/main/java/nl/openminetopia/modules/banking/BankingModule.java, src/main/java/nl/openminetopia/modules/staff/mod/commands/subcommands/ModSetLevelCommand.java, src/main/java/nl/openminetopia/api/player/objects/MinetopiaPlayer.java, src/main/java/nl/openminetopia/OpenMinetopia.java, src/main/java/nl/openminetopia/utils/WorldGuardUtils.java, src/main/java/nl/openminetopia/configuration/DefaultConfiguration.java, src/main/resources/default/levelcheck.yml, src/main/resources/default/messages.yml */}
+
+Elke speler heeft een level. De plugin berekent steeds welk level een speler kan halen op basis van punten. Bij de levelcheck-NPC zet de speler dat berekende level om in zijn echte level. Deze module houdt ook de speeltijd bij en betaalt salaris uit.
+
+<Info>
+De spelermodule staat altijd aan. Zet je `player` in `disabled-modules`, dan negeert de plugin dat.
+</Info>
+
+## Level en berekend level
+
+Een speler heeft twee waarden:
+
+- **Level**: het level dat de speler nu echt heeft. Nieuwe spelers starten op level 1.
+- **Berekend level**: het level dat de speler op basis van zijn punten kan halen. De plugin rekent dit regelmatig opnieuw uit voor alle online spelers.
+
+Op het standaard scoreboard zie je beide: `<level> -> <calculated_level> (<levelups><white>)`. Zie [Scoreboard en actionbar](/plugin/modules/scoreboard-actionbar).
+
+### Punten verdienen
+
+Het berekende level hangt af van het aantal punten. Je krijgt punten voor deze dingen:
+
+| Bron | Wanneer | Sleutel in `levelcheck.yml` | Standaard |
+|---|---|---|---|
+| Geld | Per volle 5.000 op je privérekening | `points-per-account-balance` | 50 |
+| Prefix | Eén keer, als je minstens één prefix hebt | `points-for-prefix` | 1750 |
+| Fitheid | Per volle 20 fitheid | `points-per-fitness` | 1500 |
+| Speeltijd | Per volledig uur speeltijd | `points-per-hour-played` | 350 |
+| Plots | Per WorldGuard-regio waarvan je eigenaar bent, in alle werelden | `points-per-plot` | 4000 |
+
+De punten voor fitheid tellen alleen mee als de module [Fitheid](/plugin/modules/fitheid) aan staat.
+
+<Note>
+De sleutel `points-per-vehicle` staat wel in `levelcheck.yml`, maar de plugin gebruikt hem op dit moment niet.
+</Note>
+
+### Van punten naar level
+
+De plugin deelt je punten door `points-needed-for-level-up` en rondt naar beneden af. Het resultaat ligt altijd tussen `default.level` uit `config.yml` en `max-level` uit `levelcheck.yml`.
+
+Voorbeeld met de standaardwaarden: een speler heeft 1 plot (4000), 40 fitheid (2 × 1500 = 3000) en 10 uur speeltijd (3500). Dat is 10.500 punten. 10.500 / 2500 = 4,2, dus het berekende level is 4.
+
+### Automatisch levelen
+
+Staat `auto-level-up` op `true`, dan zet de plugin het level van een speler automatisch gelijk aan zijn berekende level. Dat gebeurt ook als het berekende level lager is. Spelers hoeven dan niet naar de levelcheck-NPC.
+
+## De levelcheck-NPC
+
+Met de levelcheck-NPC zet een speler zijn berekende level om in zijn echte level.
+
+<Steps>
+  <Step title="Installeer een NPC-plugin">
+    Installeer Citizens of FancyNpcs. Zonder een van deze plugins werkt de levelcheck-NPC niet.
+  </Step>
+  <Step title="Maak een NPC">
+    Maak een NPC waarvan de naam `levelcheck` bevat, bijvoorbeeld `Levelcheck`. Hoofdletters maken niet uit.
+  </Step>
+  <Step title="Laat spelers rechtsklikken">
+    Een speler klikt met de rechtermuisknop op de NPC.
+  </Step>
+</Steps>
+
+Wat er dan gebeurt:
+
+- Is het level gelijk aan het berekende level, dan krijgt de speler een melding (`levelcheck_already_at_level`).
+- Staat `costs.enabled` op `false`, dan zet de NPC het level direct op het berekende level.
+- Staat `costs.enabled` op `true`, dan opent het menu **Levelcheck**. Daarin staan **Akkoord** en **Annuleren**. **Akkoord** toont het nieuwe level en wat de upgrade kost.
+
+Klikt de speler op **Akkoord**, dan haalt de plugin het bedrag van zijn privérekening en zet zijn level op het berekende level. Heeft hij te weinig geld, dan krijgt hij de melding `levelcheck_not_enough_money`.
+
+Is het berekende level lager dan het huidige level, dan gaat het level omlaag naar het berekende level. Daar zijn geen kosten aan verbonden. Staat `costs.enabled` op `true`, dan opent ook dan het menu en moet de speler op **Akkoord** klikken.
+
+### Kosten van een levelup
+
+De kosten tellen per level dat de speler stijgt. Gaat een speler van level 3 naar level 5, dan betaalt hij voor level 4 en level 5. Staat een level in `costs.overrides`, dan geldt dat bedrag. In de standaardconfiguratie zijn level 0 tot en met 50 gratis.
+
+<Warning>
+Voor levels zonder override gebruikt de plugin in de huidige versie niet `costs.formula`, maar `wage.formula`. Wil je vaste kosten per level, zet dan voor elk level een waarde in `costs.overrides`.
+</Warning>
+
+## Salaris
+
+Spelers krijgen salaris op basis van hun speeltijd. Elke keer dat een speler `wage.interval` seconden extra heeft gespeeld, krijgt hij zijn salaris op zijn privérekening. Met de standaardwaarde 3600 is dat elk uur speeltijd. De speler krijgt dan de melding `levelcheck_wage`.
+
+Het bedrag hangt af van het level:
+
+- Staat het level in `wage.overrides`, dan krijgt de speler dat bedrag.
+- Anders rekent de plugin het bedrag uit met `wage.formula`. `<level>` in de formule wordt het level van de speler.
+
+Met de standaardformule `50 + 0.25 * (<level> - 1)` krijgt een speler op level 1 dus 50 en op level 11 52,5.
+
+<Note>
+Het salaris wordt uitbetaald door de module [Bankieren](/plugin/modules/bankieren). Staat die module uit, dan krijgt niemand salaris. Zet je `wage.enabled` op `false`, dan is het salaris ook uit.
+</Note>
+
+## Speeltijd
+
+De plugin telt hoe lang een speler online is. Met `/playtime` zie je je speeltijd in dagen, uren, minuten en seconden. De speeltijd telt ook mee voor je level en je salaris.
+
+## Commando's
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/playtime` | Toon je eigen speeltijd | Geen |
+| `/playtime <speler>` | Toon de speeltijd van een andere speler | `openminetopia.playtime.others` |
+| `/mod setlevel <speler> <level>` | Zet het level van een speler. De speler moet online zijn | `openminetopia.mod.setlevel` |
+
+`/playtime` heeft ook de aliassen `/time` en `/ptime`. Gebruik je `/playtime <speler>` zonder de permissie, dan zie je je eigen speeltijd. Meer staffcommando's vind je bij [Staff](/plugin/modules/staff).
+
+## Configuratie
+
+De instellingen staan in `levelcheck.yml`. Dit is het standaardbestand:
+
+```yaml
+levelcheck:
+  max-level: 100
+  points-needed-for-level-up: 2500
+  points-per-plot: 4000
+  points-per-account-balance: 50
+  points-per-vehicle: 1200
+  points-for-prefix: 1750
+  points-per-hour-played: 350
+  points-per-fitness: 1500
+  auto-level-up: false
+wage:
+  enabled: true
+  interval: 3600
+  formula: 50 + 0.25 * (<level> - 1)
+  overrides:
+    0: 10
+costs:
+  enabled: true
+  formula: 250 + (<level> − 50) * 250
+  overrides:
+    0: 0
+    1: 0
+    2: 0
+    # ... level 3 tot en met 49 staan ook op 0
+    50: 0
+```
+
+| Sleutel | Wat het doet |
+|---|---|
+| `levelcheck.max-level` | Het hoogste level dat een speler kan berekenen |
+| `levelcheck.points-needed-for-level-up` | Aantal punten per level |
+| `levelcheck.points-per-plot` | Punten per WorldGuard-regio waarvan de speler eigenaar is |
+| `levelcheck.points-per-account-balance` | Punten per volle 5.000 op de privérekening |
+| `levelcheck.points-per-vehicle` | Wordt op dit moment niet gebruikt |
+| `levelcheck.points-for-prefix` | Punten als de speler minstens één prefix heeft |
+| `levelcheck.points-per-hour-played` | Punten per volledig uur speeltijd |
+| `levelcheck.points-per-fitness` | Punten per volle 20 fitheid |
+| `levelcheck.auto-level-up` | Zet het level automatisch op het berekende level |
+| `wage.enabled` | Zet het salaris aan of uit |
+| `wage.interval` | Om de hoeveel seconden speeltijd een speler salaris krijgt |
+| `wage.formula` | Formule voor het salaris. `<level>` wordt het level van de speler |
+| `wage.overrides` | Vast salaris per level, als `level: bedrag` |
+| `costs.enabled` | Zet de kosten bij de levelcheck-NPC aan of uit |
+| `costs.formula` | Bedoeld als formule voor de kosten, maar wordt in de huidige versie niet gebruikt (zie hierboven) |
+| `costs.overrides` | Vaste kosten per level, als `level: bedrag` |
+
+In `config.yml` bepaalt `default.level` (standaard `1`) het laagste level dat de plugin kan berekenen.
+
+Na een wijziging laad je `levelcheck.yml` opnieuw met `/openminetopia reload`. Zie [Configuratie](/plugin/configuratie).
+
+## Meldingen
+
+Deze teksten pas je aan in `messages.yml`:
+
+| Sleutel | Wanneer |
+|---|---|
+| `player_time_self` | Je eigen speeltijd |
+| `player_time_other_player` | De speeltijd van een andere speler |
+| `player_time_format` | Opmaak van de speeltijd |
+| `levelcheck_already_at_level` | De speler kan niet hoger bij de NPC |
+| `levelcheck_not_enough_money` | De speler heeft te weinig geld voor de levelup |
+| `levelcheck_success` | De levelup is gelukt |
+| `levelcheck_wage` | De speler krijgt salaris |
+
+## Placeholders
+
+Het level, het berekende level en de speeltijd kun je tonen in de chat, het scoreboard en via PlaceholderAPI. Zie [Placeholders](/plugin/placeholders).

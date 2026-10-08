@@ -1,0 +1,144 @@
+---
+title: "Koppelen met de plugin"
+description: "De instellingen in config.yml waarmee de plugin en het portaal elkaar bereiken, en hoe spelers hun account koppelen."
+icon: "plug"
+---
+
+{/* Bron: openminetopia src/main/java/nl/openminetopia/configuration/DefaultConfiguration.java, src/main/java/nl/openminetopia/modules/portal/ (PortalModule.java, commands/LinkCommand.java), src/main/java/nl/openminetopia/modules/restapi/ (RestAPIModule.java, verticles/MainVerticle.java), src/main/java/nl/openminetopia/OpenMinetopia.java, src/main/resources/default/messages.yml; omt-portal (origin/main) routes/api.php, routes/web.php, app/Http/Controllers/Api/MinecraftVerificationController.php, app/Http/Controllers/Auth/MinecraftVerificationController.php, app/Http/Controllers/Auth/RegisterController.php, app/Http/Middleware/ValidateApiKey.php, app/Http/Middleware/EnsureTenantActive.php, app/Http/Middleware/IdentifyTenant.php, app/Providers/AppServiceProvider.php, app/Services/Plugin/PluginApiService.php, app/Services/Plugin/PluginAddressGuard.php, resources/views/auth/verify.blade.php */}
+
+Deze pagina geldt voor elk portaal, gehost of zelf gehost. Het portaal en de plugin moeten elkaar allebei kunnen bereiken. Dat regel je met twee secties in de `config.yml` van de plugin: `rest-api` en `portal`.
+
+## De instellingen
+
+Dit zijn de standaardwaarden uit de plugin:
+
+```yaml
+rest-api:
+  enabled: false
+  host: 127.0.0.1
+  port: 4567
+  api-key: CHANGE-ME
+
+portal:
+  enabled: false
+  url: portal.openminetopia.nl
+  token: CHANGE-ME
+```
+
+### rest-api
+
+Via de REST API haalt het portaal gegevens op uit de plugin. Meer over de API lees je bij [REST API](/plugin/rest-api).
+
+| Key | Standaard | Betekenis |
+|---|---|---|
+| `rest-api.enabled` | `false` | Zet de REST API aan. Staat dit op `false`, dan start de plugin geen webserver en kan het portaal niets ophalen. |
+| `rest-api.host` | `127.0.0.1` | Het adres waarop de API luistert. Met `127.0.0.1` is de API alleen vanaf de server zelf bereikbaar. Zet het op `0.0.0.0` om op alle netwerkadressen te luisteren. |
+| `rest-api.port` | `4567` | De poort van de API. Dit is een andere poort dan die van Minecraft. |
+| `rest-api.api-key` | `CHANGE-ME` | De sleutel die het portaal bij elke aanvraag meestuurt in de header `X-API-Key`. Klopt die niet, dan antwoordt de plugin met 401. |
+
+### portal
+
+| Key | Standaard | Betekenis |
+|---|---|---|
+| `portal.enabled` | `false` | Zet het koppelen aan. Alleen dan bestaat het commando `/koppel`. |
+| `portal.url` | `portal.openminetopia.nl` | Het adres van je portaal. Bijvoorbeeld `jouwportaal.mtportal.nl` of `http://portaal.voorbeeld.nl:8080`. |
+| `portal.token` | `CHANGE-ME` | De sleutel die de plugin meestuurt als hij het portaal aanroept. Het portaal controleert die. |
+
+Herstart de server na het aanpassen. Bij het starten van de REST API zie je in de console `HTTP server started on port 4567 and host 0.0.0.0`, met jouw poort en host.
+
+<Tip>
+Heb je een gehost portaal? Dan staat het hele blok met de juiste waarden op je portaalpagina op openminetopia.nl. Zie [Gehost portaal](/portaal/gehost#plugin-koppelen).
+</Tip>
+
+### Zo maakt de plugin een adres van portal.url
+
+De plugin zet `/api` achter het adres. Bij `/koppel` roept hij daarna `/minecraft/verify` aan. Een `/` aan het eind haalt de plugin eerst weg.
+
+| `portal.url` | Adres dat de plugin aanroept |
+|---|---|
+| `jouwportaal.mtportal.nl` | `https://jouwportaal.mtportal.nl/api/minecraft/verify` |
+| `http://portaal.voorbeeld.nl:8080` | `http://portaal.voorbeeld.nl:8080/api/minecraft/verify` |
+| `portaal.test` | `http://portaal.test/api/minecraft/verify` |
+
+- Begint het adres met `http://` of `https://`, dan gebruikt de plugin het zoals het er staat. Zo kan een zelf gehost portaal ook zonder HTTPS draaien.
+- Staat er alleen een hostnaam, dan zet de plugin er `https://` voor.
+- Eindigt de hostnaam op `.test`, dan gebruikt de plugin `http://`. Dat is bedoeld voor lokaal testen.
+
+## Poorten
+
+| Richting | Wat moet open |
+|---|---|
+| Portaal naar plugin | De poort van `rest-api.port` (standaard `4567`, TCP) op je Minecraft-server. Het portaal moet die vanaf internet kunnen bereiken. Zet hem open bij je host of in je firewall. |
+| Plugin naar portaal | Je Minecraft-server moet het portaal kunnen bereiken op het adres uit `portal.url`. Meestal is dat HTTPS. Dat is nodig voor `/koppel`. |
+
+De REST API van de plugin werkt via gewone `http://`, zonder HTTPS. Het portaal accepteert alleen een poort tussen 1024 en 65535.
+
+<Warning>
+Het portaal weigert interne adressen, zoals `127.0.0.1`, `10.x.x.x` en `192.168.x.x`. Ook een hostnaam die naar zo'n adres wijst, werkt niet. Gebruik het openbare IP-adres of een openbare hostnaam van je Minecraft-server.
+</Warning>
+
+## Je account koppelen als speler
+
+Een speler gebruikt het portaal pas als zijn Minecraft-account gekoppeld is.
+
+<Steps>
+  <Step title="Maak een account op het portaal">
+    Registreer op het portaal met je naam, e-mailadres, **Minecraft-gebruikersnaam** en wachtwoord. Het portaal zoekt je Minecraft-account op bij Mojang. Bestaat de naam niet, dan kun je je niet registreren.
+  </Step>
+  <Step title="Kopieer het commando">
+    Na het registreren zie je de pagina **Koppel je Minecraft-account**. Daar staat het commando `/koppel` met jouw persoonlijke code erachter. Klik op **Kopieer**. Deel de code met niemand.
+  </Step>
+  <Step title="Voer het commando in-game uit">
+    Join de server met hetzelfde Minecraft-account. Typ het commando in de chat, bijvoorbeeld `/koppel <code>`. Gelukt? Dan zie je "Je account is succesvol gekoppeld!".
+  </Step>
+  <Step title="Controleer de koppeling">
+    Klik op het portaal op **Koppeling controleren**. Je komt dan in het portaal.
+  </Step>
+</Steps>
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/koppel <code>` | Koppelt je Minecraft-account aan je account op het portaal. | Geen |
+
+Alias: `/link`. Het commando bestaat alleen als `portal.enabled` op `true` staat. Je kunt het alleen in-game gebruiken, niet vanuit de console.
+
+De code hoort bij jouw account op het portaal. Je krijgt hem bij het registreren en hij verandert niet. Klik je op **Koppeling controleren** voordat het koppelen gelukt is, dan zie je "Je account is nog niet geverifieerd. Gebruik /koppel in de game."
+
+### Berichten
+
+De berichten staan in `messages.yml`:
+
+| Key | Standaardtekst |
+|---|---|
+| `portal_link_success` | `<green>Je account is succesvol gekoppeld!` |
+| `portal_link_error` | `<red>Er is iets fout gegaan bij het verifiëren van je account.` |
+
+## Als koppelen mislukt
+
+Krijgt een speler de foutmelding, dan staat de oorzaak in de console van je server. Er zijn twee soorten meldingen.
+
+### Het portaal antwoordt met een fout
+
+In de console staat dan een waarschuwing als `Response code 401 Unauthorized while trying to verify player Steve`. De code zegt wat er mis is:
+
+| Code | Oorzaak | Wat je doet |
+|---|---|---|
+| 401 | `portal.token` klopt niet. | Zet de juiste token in `portal.token` en herstart de server. |
+| 404 | De code bestaat niet. Of `portal.url` wijst naar een adres waar geen portaal staat. | Laat de speler de code opnieuw kopiëren. Controleer `portal.url`. |
+| 400 | Het account is al gekoppeld, of de speler is in-game met een ander Minecraft-account dan waarmee hij zich registreerde. | Join met hetzelfde account als op het portaal. |
+| 422 | De code heeft niet de juiste vorm. Een code is 32 tekens lang. | Kopieer het commando opnieuw van het portaal. |
+| 423 | Het portaal staat op pauze. | Verleng het portaal. Zie [Gehost portaal](/portaal/gehost#verlengen). |
+| 429 | Te veel pogingen. Het portaal accepteert 30 koppelpogingen per minuut vanaf hetzelfde IP-adres. | Wacht even en probeer het opnieuw. |
+| 500 | Er ging iets mis op het portaal. | Probeer het later opnieuw. |
+
+Het portaal vergelijkt de naam en de UUID van de speler met de gegevens van Mojang. Geeft je server spelers een andere UUID dan Mojang, zoals in offline mode zonder proxy die de UUID doorgeeft, dan mislukt het koppelen met code 400.
+
+### De plugin bereikt het portaal niet
+
+In de console staat dan `An error occurred while trying to verify player Steve:` met de foutmelding erachter. De plugin kreeg geen antwoord van het portaal. Controleer:
+
+- of `portal.url` naar het juiste adres wijst, met `http://` ervoor als je portaal geen HTTPS heeft;
+- of de hostnaam klopt en bestaat;
+- of je Minecraft-server uitgaande verbindingen naar het portaal mag maken.
+
+Kom je er niet uit? Stel je vraag op [Discord](/community/discord) of kijk bij de [veelgestelde vragen](/community/faq).

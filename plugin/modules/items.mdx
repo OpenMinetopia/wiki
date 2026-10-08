@@ -1,0 +1,102 @@
+---
+title: "Items"
+description: "Eigen items met een item-model of custom model data, verdeeld over categorieën."
+icon: "box"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/modules/items/ (ItemsModule.java, commands/ItemsCommand.java, configuration/CategoriesConfiguration.java, configuration/ItemConfiguration.java, configuration/objects/*, menus/*), src/main/resources/default/items/ */}
+
+Met de itemsmodule maak je eigen items, zoals kleding, accessoires en decoratie. Je zet ze in YAML-bestanden in de map `items`. Spelers met de juiste permissie pakken ze uit een menu of krijgen ze met een commando.
+
+De modulenaam voor `disabled-modules` in `config.yml` is `items`.
+
+## Commando's
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/items` | Opent het menu **Item Categorieën**. | `openminetopia.items` |
+| `/items get <item>` | Geeft je één item. Gebruik de vorm `namespace:id`, bijvoorbeeld `accessoires:relic_speaker`. | `openminetopia.items.get` |
+
+<Info>
+  Aliassen: `/ddgitems`, `/mtitems` en `/minetopiaitems`.
+</Info>
+
+In het menu klik je op een categorie en daarna op een item. Je krijgt het item dan in je inventaris. Daarvoor is `openminetopia.items` genoeg.
+
+## De map items
+
+Bij de eerste start maakt de plugin de map `plugins/OpenMinetopia/items` aan. Daarin komen de standaarditems: 30 categorieën met kleding, accessoires, decoratie en meer.
+
+De standaardbestanden worden alleen gekopieerd als de map `items` nog niet bestaat. Verwijder je een bestand, dan komt het niet terug. Alleen `categories.yml` wordt opnieuw aangemaakt als die ontbreekt.
+
+<Note>
+  De standaarditems verwijzen met `item_model` naar modellen in een resourcepack. Die modellen moeten in het resourcepack van je server staan.
+</Note>
+
+De map heeft twee soorten bestanden:
+
+- `categories.yml` in de hoofdmap `items`. Hierin staan de categorieën.
+- Itembestanden. Dat is elk ander `.yml`- of `.yaml`-bestand in `items` of in een submap daarvan. Een bestand met de naam `categories.yml` in een submap slaat de plugin ook over.
+
+### categories.yml
+
+Elke categorie heeft een eigen blok. De naam van het blok kies je zelf.
+
+```yaml
+accessoires:
+  name: Accessoires
+  namespace: accessoires
+  icon:
+    material: PAPER
+    item_model: minecraft:custom/accessoires/relic_speaker/relic_speaker
+```
+
+| Sleutel | Verplicht | Betekenis |
+|---|---|---|
+| `name` | Ja | De naam in het menu. |
+| `namespace` | Ja | Het eerste deel van de item-id. Itembestanden koppel je hiermee aan de categorie. |
+| `icon.material` | Nee | Het materiaal van het icoon. Standaard `STONE`. Een onbekend materiaal wordt ook `STONE`. |
+| `icon.item_model` | Nee | Item-model van het icoon. |
+| `icon.custom_model_data` | Nee | Custom model data van het icoon. |
+
+Mist `name` of `namespace`, dan slaat de plugin de categorie over en schrijft een waarschuwing in de console.
+
+### Itembestanden
+
+Een itembestand hoort bij één categorie. Je geeft de `namespace` op en zet de items onder `items`. De sleutel van elk item is de id.
+
+```yaml
+namespace: clothing
+items:
+  bandana_helmet:
+    material: LEATHER_HELMET
+    item_model: minecraft:armor/bandana/helmet
+    name: Bandana Helmet
+    equippable:
+      slot: HEAD
+      asset_id: minecraft:bandana
+```
+
+Dit item heet in commando's `clothing:bandana_helmet`.
+
+| Sleutel | Verplicht | Betekenis |
+|---|---|---|
+| `namespace` | Ja | Moet gelijk zijn aan de `namespace` van een categorie in `categories.yml`. |
+| `items.<id>.name` | Ja | De naam van het item. Je kunt MiniMessage-kleuren gebruiken. |
+| `items.<id>.material` | Ja | Het Minecraft-materiaal. |
+| `items.<id>.item_model` | Nee | Het item-model, in de vorm `namespace:pad`. |
+| `items.<id>.custom_model_data` | Nee | Custom model data als getal. |
+| `items.<id>.equippable.slot` | Nee | Het slot waarin je het item draagt, bijvoorbeeld `HEAD`, `CHEST`, `LEGS` of `FEET`. |
+| `items.<id>.equippable.asset_id` | Nee | Het model dat je ziet als iemand het item draagt, in de vorm `namespace:id`. |
+
+Heeft een item geen `name` of `material`, of is het materiaal onbekend, dan slaat de plugin dat item over en schrijft een waarschuwing in de console. Bestaat de `namespace` niet in `categories.yml`, dan wordt het hele bestand overgeslagen.
+
+Meerdere bestanden mogen dezelfde `namespace` gebruiken. De items komen dan samen in één categorie. Zo staan de kledingitems in de standaardmap verspreid over 328 bestanden in `items/clothing`, allemaal met `namespace: clothing`.
+
+## Herladen
+
+Na een wijziging in de map `items` herlaad je alles met `/openminetopia reload`. Zie [Overige functies](/plugin/modules/overig).
+
+## Rugzakken
+
+Elk item uit deze module kan een rugzak worden met `/rugzak get`. Zie [Rugzakken](/plugin/modules/rugzakken).

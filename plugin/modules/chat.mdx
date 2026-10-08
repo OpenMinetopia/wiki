@@ -1,0 +1,138 @@
+---
+title: "Chat"
+description: "Chatopmaak met level, prefix en kleuren, chat binnen een straal, en ChatSpy en CommandSpy voor staff."
+icon: "comments"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/modules/chat/ (ChatModule.java, listeners/PlayerChatListener.java, listeners/PlayerCommandListener.java, utils/SpyUtils.java), src/main/java/nl/openminetopia/modules/staff/mod/commands/subcommands/ModChatSpyCommand.java, src/main/java/nl/openminetopia/modules/staff/mod/commands/subcommands/ModCommandSpyCommand.java, src/main/java/nl/openminetopia/utils/ChatUtils.java, src/main/java/nl/openminetopia/configuration/DefaultConfiguration.java, src/main/resources/default/messages.yml */}
+
+De chatmodule geeft elk chatbericht een vaste opmaak met het level, de prefix en de kleuren van de speler. Berichten zijn alleen te zien voor spelers in de buurt. Staff kan met ChatSpy en CommandSpy meelezen.
+
+## Hoe het werkt
+
+De plugin maakt een chatbericht op als:
+
+- `chat.enabled` op `true` staat;
+- de speler in een Minetopia-wereld of stad is (zie [Plaatsen](/plugin/modules/plaatsen));
+- de speler geen staffchat aan heeft (zie [Staff](/plugin/modules/staff));
+- de speler geen politiechat via de portofoon aan heeft (zie [Politie](/plugin/modules/politie)).
+
+Klopt een van deze dingen niet, dan laat de plugin het bericht met rust.
+
+### Chat in de buurt
+
+Staat `chat.radius.enabled` op `true`, dan zien alleen spelers in dezelfde wereld en binnen `chat.radius.range` blokken het bericht. Standaard is dat 20 blokken. De speler zelf ziet zijn bericht ook.
+
+Is er niemand in de buurt en staat `chat.radius.notify-when-nobody-in-range` op `true`, dan krijgt de speler de melding `chat_no_players_in_range`. Het bericht wordt dan niet verstuurd.
+
+Staat `chat.radius.enabled` op `false`, dan ziet iedereen op de server het bericht.
+
+### Wat spelers verder merken
+
+- Noemt iemand jouw naam in een bericht, dan zie je je naam groen en hoor je een geluid.
+- Spelers kunnen geen MiniMessage-opmaak in hun bericht gebruiken. De plugin toont die tekst letterlijk.
+- Het bericht krijgt de chatkleur van de speler. Zie [Kleuren](/plugin/modules/kleuren).
+- Draagt een speler een bivakmuts (balaclava), dan toont de chat de standaardwaarden voor level, prefix en kleuren, en een onleesbare naam. Zie [Politie](/plugin/modules/politie).
+
+## Chatformaat
+
+Het formaat stel je in met `chat.format` in `config.yml`. `<message>` is de plek van het bericht. De standaard is:
+
+```
+<dark_gray>[<level_color>Level <level><reset><dark_gray>] <dark_gray>[<prefix_color><prefix><reset><dark_gray>] <name_color><player><reset>: <chat_color><message>
+```
+
+Dit geeft bijvoorbeeld: `[Level 1] [Zwerver] Steve: Hallo`.
+
+Je kunt deze placeholders gebruiken:
+
+| Placeholder | Wat het toont |
+|---|---|
+| `<message>` | Het chatbericht |
+| `<player>` | De naam van de speler |
+| `<display_name>` | De display name van de speler |
+| `<level>` | Het level van de speler |
+| `<calculated_level>` | Het berekende level |
+| `<levelups>` | Het verschil tussen berekend en huidig level, in kleur |
+| `<prefix>` | De actieve prefix |
+| `<prefix_color>` | De prefixkleur |
+| `<name_color>` | De naamkleur |
+| `<chat_color>` | De chatkleur |
+| `<level_color>` | De levelkleur |
+| `<world_name>`, `<world_title>`, `<world_loadingname>`, `<world_color>` | Gegevens van de wereld |
+| `<city_name>`, `<city_title>`, `<city_loadingname>`, `<city_color>` | Gegevens van de stad |
+| `<temperature>` | De temperatuur van de plek |
+| `<fitness>`, `<max_fitness>` | De fitheid en de maximale fitheid |
+| `<balance>`, `<balance_formatted>` | Het saldo van de privérekening |
+| `<currency_id>` | Het saldo van de valuta met die id, bijvoorbeeld `<currency_graycoin>`. Zie [Valuta](/plugin/modules/valuta) |
+| `<date>`, `<time>` | De datum (`dd-MM-yyyy`) en tijd (`HH:mm`) van de server |
+| `<new_line>` | Een nieuwe regel |
+
+Heb je PlaceholderAPI, dan werken ook `%...%`-placeholders. Zie ook [Placeholders](/plugin/placeholders).
+
+## ChatSpy en CommandSpy
+
+Staff kan meelezen met andere spelers.
+
+- **ChatSpy** toont chatberichten van spelers buiten jouw chatbereik, of in een andere wereld.
+- **CommandSpy** toont alle commando's die andere spelers typen.
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/mod chatspy` | Zet ChatSpy aan of uit | `openminetopia.mod.chatspy` |
+| `/mod commandspy` | Zet CommandSpy aan of uit | `openminetopia.mod.commandspy` |
+
+De instelling blijft bewaard, ook na opnieuw inloggen. De opmaak van de berichten stel je in met `chat_chatspy_format` en `chat_commandspy_format` in `messages.yml`.
+
+### Naar Discord sturen
+
+Je kunt alle chatberichten en commando's ook naar een Discord-kanaal sturen. Maak in Discord een webhook aan en zet de URL in `config.yml`:
+
+```yaml
+spy:
+  chat-spy-webhook: ""
+  command-spy-webhook: ""
+```
+
+| Sleutel | Wat het doet |
+|---|---|
+| `spy.chat-spy-webhook` | Webhook-URL voor alle chatberichten |
+| `spy.command-spy-webhook` | Webhook-URL voor alle commando's |
+
+Laat je een sleutel leeg, dan stuurt de plugin niets naar Discord.
+
+<Note>
+ChatSpy, CommandSpy en de webhooks horen bij de chatmodule. Zet je `chat` in `disabled-modules`, dan werken ze niet. Zet je alleen `chat.enabled` op `false`, dan werken ze wel.
+</Note>
+
+## Configuratie
+
+De chatinstellingen staan in `config.yml`. Dit zijn de standaardwaarden:
+
+```yaml
+chat:
+  format: "<dark_gray>[<level_color>Level <level><reset><dark_gray>] <dark_gray>[<prefix_color><prefix><reset><dark_gray>] <name_color><player><reset>: <chat_color><message>"
+  enabled: true
+  radius:
+    enabled: true
+    range: 20
+    notify-when-nobody-in-range: false
+```
+
+| Sleutel | Standaard | Wat het doet |
+|---|---|---|
+| `chat.format` | zie hierboven | De opmaak van een chatbericht |
+| `chat.enabled` | `true` | Zet de chatopmaak en chat in de buurt aan of uit |
+| `chat.radius.enabled` | `true` | Alleen spelers in de buurt zien het bericht |
+| `chat.radius.range` | `20` | Het bereik in blokken |
+| `chat.radius.notify-when-nobody-in-range` | `false` | Geef een melding en verstuur het bericht niet als niemand in de buurt is |
+
+Na een wijziging laad je `config.yml` opnieuw met `/openminetopia reload`. Zie [Configuratie](/plugin/configuratie).
+
+## Meldingen
+
+| Sleutel | Wanneer |
+|---|---|
+| `chat_no_players_in_range` | Er is niemand in de buurt die je bericht hoort |
+| `chat_chatspy_format` | Opmaak van een ChatSpy-bericht |
+| `chat_commandspy_format` | Opmaak van een CommandSpy-bericht |

@@ -1,0 +1,51 @@
+---
+title: "Rugzakken"
+description: "Items die je opent als extra opslag, met de inhoud in het item zelf."
+icon: "backpack"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/modules/backpack/ (BackpackModule.java, commands/BackpackCommand.java, item/*, listeners/*, menus/BackpackMenu.java, session/*), src/main/resources/default/messages.yml */}
+
+Een rugzak is een item met eigen opslag. Klik er met rechts mee en je opent een inventaris van 1 tot 6 rijen. De inhoud wordt in het item zelf bewaard. Geef je de rugzak aan iemand anders, dan gaat de inhoud mee.
+
+De modulenaam voor `disabled-modules` in `config.yml` is `backpack`.
+
+## Commando's
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/rugzak get <item> [rijen]` | Geeft je een nieuwe rugzak van een item uit de [itemsmodule](/plugin/modules/items). Gebruik de vorm `namespace:id`. | `openminetopia.backpack.get` |
+| `/rugzak make [rijen]` | Maakt een rugzak van het item in je hand. | `openminetopia.backpack.make` |
+| `/rugzak title <titel>` | Zet de titel van het rugzakmenu voor de rugzak in je hand. | `openminetopia.backpack.title` |
+| `/rugzak resettitle` | Zet de titel terug naar de standaardtitel. | `openminetopia.backpack.title` |
+
+<Info>
+  Alias: `/backpack`. Het aantal rijen is 1 tot 6. Laat je `[rijen]` weg, dan krijgt de rugzak 3 rijen.
+</Info>
+
+Voor `/rugzak make` moet je precies één item in je hand hebben. Is het al een rugzak, dan krijg je een melding.
+
+## Een rugzak gebruiken
+
+Houd de rugzak in je hand en klik met rechts. Iedereen kan een rugzak openen. Daar is geen permissie voor nodig.
+
+Een paar regels:
+
+- Rugzakken kun je niet in een andere rugzak klikken of slepen. De plugin kijkt daarbij alleen naar het item waarop je klikt en het item op je cursor. Een rugzak die je met een cijfertoets of de wisseltoets voor je tweede hand in een vak zet, wordt niet tegengehouden.
+- Een rugzak die open is, kun je niet verplaatsen, weggooien of oppakken.
+- De inhoud wordt opgeslagen terwijl je items verplaatst en als je het menu sluit.
+- De titel van het menu is standaard `backpack_menu_title` uit `messages.yml`. Met `/rugzak title` geef je één rugzak een eigen titel. Je kunt daarin MiniMessage-kleuren gebruiken.
+
+Een nieuwe rugzak krijgt een regel in de beschrijving met het aantal rijen.
+
+## Bescherming tegen dupliceren
+
+Elke rugzak krijgt een unieke id zodra hij voor het eerst wordt geopend. Open je een rugzak en heb je nog een kopie met dezelfde id in je inventaris, dan haalt de plugin die kopieën weg. Je krijgt daar een melding van. Is een rugzak met dezelfde id op dat moment al open bij iemand anders, dan krijgt jouw rugzak een nieuwe id.
+
+## Fouilleren
+
+Fouilleert een agent een speler met [`/fouilleer`](/plugin/modules/politie), dan kan hij met rechts op een rugzak in die inventaris klikken. De rugzak gaat dan open en de agent ziet de inhoud.
+
+## Berichten
+
+Alle teksten staan in `messages.yml`. De sleutels beginnen met `backpack_`.

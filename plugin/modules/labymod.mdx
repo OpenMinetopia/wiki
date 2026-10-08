@@ -1,0 +1,57 @@
+---
+title: "LabyMod"
+description: "Toon het banksaldo en een ondertitel bij spelers die LabyMod gebruiken."
+icon: "plug"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/modules/labymod/ (LabymodModule.java, configuration/LabymodConfiguration.java, listeners/LabyPlayerListener.java), src/main/resources/default/labymod.yml, src/main/java/nl/openminetopia/OpenMinetopia.java, src/main/resources/paper-plugin.yml, src/main/java/nl/openminetopia/utils/ChatUtils.java */}
+
+Spelen er mensen met [LabyMod](https://www.labymod.net) op je server? Dan kan OpenMinetopia hun banksaldo in de LabyMod-interface tonen en een ondertitel onder hun naam zetten.
+
+De modulenaam voor `disabled-modules` in `config.yml` is `labymod`.
+
+## Instellen
+
+<Steps>
+  <Step title="Installeer de LabyMod Server API">
+    Zet de plugin `LabyModServerAPI` in je plugins-map. Zonder die plugin doet deze module niets. Staat de module aan terwijl de plugin ontbreekt, dan zie je een waarschuwing in de console.
+  </Step>
+  <Step title="Zet de module aan">
+    Zet in `labymod.yml` de sleutel `enabled` op `true`.
+  </Step>
+  <Step title="Herstart de server">
+    De module leest `labymod.yml` bij het opstarten. Herstart de server na elke wijziging.
+  </Step>
+</Steps>
+
+## labymod.yml
+
+```yaml
+enabled: false
+economy-display:
+  enabled: true
+  url: ''
+subtitle:
+  enabled: true
+  display: '<prefix>'
+```
+
+| Sleutel | Standaard | Betekenis |
+|---|---|---|
+| `enabled` | `false` | Zet de LabyMod-functies aan. |
+| `economy-display.enabled` | `true` | Toont het saldo van de privérekening van de speler in LabyMod. |
+| `economy-display.icon-url` | geen | URL van een eigen icoon voor het saldo. |
+| `subtitle.enabled` | `true` | Zet een ondertitel onder de naam van de speler. |
+| `subtitle.display` | `'<prefix>'` | De tekst van de ondertitel. |
+
+<Note>
+  Het standaardbestand bevat `economy-display.url`, maar de plugin leest `economy-display.icon-url`. Wil je een eigen icoon, zet de URL dan onder `icon-url`.
+</Note>
+
+Saldo en ondertitel worden elke seconde bijgewerkt. Het saldo verschijnt alleen als de speler een privérekening heeft.
+
+In `subtitle.display` werken de vaste placeholders uit de chat, zoals `<prefix>` en `<level>`. Zie [Placeholders](/plugin/placeholders). De ondertitel is platte tekst, dus kleuren werken niet. De plugin zet de opgemaakte tekst terug om naar MiniMessage-tekst. Daardoor kunnen tags zoals `<red>` letterlijk in de ondertitel staan.
+
+<Warning>
+  `/openminetopia reload` leest `labymod.yml` wel opnieuw in, maar de functies blijven de oude instellingen gebruiken. Herstart daarom de server.
+</Warning>

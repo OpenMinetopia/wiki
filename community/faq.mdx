@@ -1,0 +1,62 @@
+---
+title: "Veelgestelde vragen"
+sidebarTitle: "FAQ"
+description: "Korte antwoorden op vragen die vaak terugkomen."
+icon: "circle-question"
+---
+
+{/* Bron: openminetopia src/main/resources/paper-plugin.yml, OpenMinetopiaLoader.java, configuration/DefaultConfiguration.java, modules/misc/listeners/PlayerAttackListener.java, modules/core/commands/OpenMinetopiaCommand.java, modules/banking/BankingModule.java, .github/workflows/gradle.yml, LICENSE; omt-website app/Services/Hosting/Lifecycle.php */}
+
+<AccordionGroup>
+  <Accordion title="Is OpenMinetopia gratis?">
+    Ja. De plugin en het portaal zijn open-source. De plugin valt onder de GPL-3.0-licentie, het portaal onder de MIT-licentie. Je downloadt de plugin gratis op [Modrinth](https://modrinth.com/plugin/openminetopia). Een gehost portaal op openminetopia.nl is ook gratis. Zie [Gehost portaal](/portaal/gehost).
+  </Accordion>
+
+  <Accordion title="Werkt de plugin op Spigot of Bukkit?">
+    Nee. OpenMinetopia is een Paper-plugin. Je hebt Paper nodig, met WorldEdit en WorldGuard. Zie [Installatie](/plugin/installatie).
+  </Accordion>
+
+  <Accordion title="Welke database kan ik gebruiken?">
+    Standaard SQLite. Daar hoef je niets voor te doen. Voor een MySQL- of MariaDB-server zet je `database.type` op `mysql` en vul je de gegevens in. Zie [Database](/plugin/configuratie#database).
+  </Accordion>
+
+  <Accordion title="Heeft mijn server internet nodig?">
+    Ja, bij de eerste start. Paper downloadt dan de bibliotheken die de plugin nodig heeft, zoals de databasedrivers.
+  </Accordion>
+
+  <Accordion title="Mijn spelers kunnen een commando niet gebruiken.">
+    De plugin registreert zijn permissies niet. Daardoor hebben alleen OP's ze. Geef je spelers de permissie met een permissieplugin, zoals LuckPerms. Welke permissie bij welk commando hoort, staat op [Commando's en permissies](/plugin/commandos).
+  </Accordion>
+
+  <Accordion title="Spelers kunnen elkaar niet slaan.">
+    In een stad of wereld van OpenMinetopia kan een speler een ander alleen slaan met een item uit `pvp.items` in `config.yml`. Bij een nieuwe installatie is die lijst leeg. Zet de items die je wilt toestaan in de lijst, of zet `pvp.enabled` op `false`. Zie [PvP](/plugin/configuratie#pvp).
+  </Accordion>
+
+  <Accordion title="Kan ik modules uitzetten?">
+    Ja, met `disabled-modules` in `config.yml`. Niet elke module kan zonder problemen uit. Lees eerst [Modules uitzetten](/plugin/configuratie#modules-uitzetten).
+  </Accordion>
+
+  <Accordion title="Moet ik de server herstarten na een wijziging?">
+    Niet altijd. `/openminetopia reload` herlaadt de meeste bestanden, maar niet alles. Wat wel en niet herlaadt, staat op [Wijzigingen laden](/plugin/configuratie#wijzigingen-laden).
+  </Accordion>
+
+  <Accordion title="Werkt OpenMinetopia met andere economy-plugins?">
+    Staat Vault op je server, dan meldt OpenMinetopia zich als economy bij Vault. Andere plugins gebruiken dan het saldo van de privérekening van een speler. Zie [Bankieren](/plugin/modules/bankieren).
+  </Accordion>
+
+  <Accordion title="Kan ik de gegevens van OpenMinetopia in andere plugins tonen?">
+    Ja, met PlaceholderAPI. Zie [Placeholders](/plugin/placeholders). Voor een website of eigen tool is er de [REST API](/plugin/rest-api).
+  </Accordion>
+
+  <Accordion title="Waar vind ik een testversie met de nieuwste wijzigingen?">
+    Bij elke wijziging op `master` bouwt GitHub Actions de plugin. De jar staat als artifact bij die build in de [Actions van de repository](https://github.com/OpenMinetopia/openminetopia/actions). Testversies kunnen bugs bevatten. Gebruik ze niet zomaar op je echte server.
+  </Accordion>
+
+  <Accordion title="Mijn gehoste portaal staat op pauze.">
+    Je hebt het niet op tijd verlengd. Zet het weer aan via de link in de e-mail of op je portaalpagina op openminetopia.nl. Je gegevens zijn er nog. Na 14 dagen pauze wordt het portaal verwijderd. Zie [Verlengen](/portaal/gehost#verlengen).
+  </Accordion>
+
+  <Accordion title="Mijn vraag staat er niet tussen.">
+    Stel hem op [Discord](/community/discord).
+  </Accordion>
+</AccordionGroup>

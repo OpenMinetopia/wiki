@@ -1,0 +1,65 @@
+---
+title: "Teleporters"
+description: "Drukplaten die spelers naar een vaste plek teleporteren."
+icon: "door-open"
+---
+
+{/* Bron: src/main/java/nl/openminetopia/modules/teleporter/ (TeleporterModule.java, commands/TeleporterCommand.java, commands/subcommands/TeleporterCreateCommand.java, listeners/TeleporterInteractListener.java, listeners/block/TeleporterPlaceListener.java, listeners/block/TeleporterBreakListener.java, utils/TeleporterUtil.java, utils/enums/PressurePlate.java, events/PlayerUseTeleporterEvent.java), src/main/java/nl/openminetopia/configuration/DefaultConfiguration.java */}
+
+Een teleporter is een drukplaat. Loopt een speler eroverheen, dan wordt hij naar een vaste plek geteleporteerd. Die plek kies je bij het maken van de drukplaat.
+
+## Een teleporter maken
+
+<Steps>
+  <Step title="Ga op de bestemming staan">
+    Ga precies staan waar spelers moeten uitkomen en kijk de goede kant op. Je positie en kijkrichting worden opgeslagen.
+  </Step>
+  <Step title="Maak de drukplaat">
+    Typ `/teleporter create`. Je krijgt een **Teleporter Plate** in je inventory. In de lore staan de coördinaten en de wereld van de bestemming.
+  </Step>
+  <Step title="Zet de drukplaat neer">
+    Plaats de drukplaat waar je wilt. Vanaf dat moment teleporteert hij iedereen die erop stapt naar de bestemming.
+  </Step>
+</Steps>
+
+Boven de drukplaat komt standaard een zwevende tekst met de bestemming. Breek je de drukplaat af, dan verdwijnt die tekst ook.
+
+## Commando's
+
+| Commando | Wat het doet | Permissie |
+|---|---|---|
+| `/teleporter create [plaat] [tekst] [kijkrichting afronden]` | Geeft je een teleporter-drukplaat met je huidige positie als bestemming. | `openminetopia.teleporter.create` |
+| `/teleporter help` | Toont de hulp. | `openminetopia.teleporter` |
+
+De argumenten van `/teleporter create`:
+
+| Argument | Standaard | Wat het doet |
+|---|---|---|
+| `[plaat]` | `STONE_PRESSURE_PLATE` | Het soort drukplaat. |
+| `[tekst]` | `true` | Met `false` komt er geen zwevende tekst boven de drukplaat. |
+| `[kijkrichting afronden]` | `false` | Met `true` wordt je kijkrichting afgerond op stappen van 45 graden. |
+
+Je kunt kiezen uit deze drukplaten: `STONE_PRESSURE_PLATE`, `POLISHED_BLACKSTONE_PRESSURE_PLATE`, `LIGHT_WEIGHTED_PRESSURE_PLATE`, `HEAVY_WEIGHTED_PRESSURE_PLATE`, `OAK_PRESSURE_PLATE`, `SPRUCE_PRESSURE_PLATE`, `BIRCH_PRESSURE_PLATE`, `JUNGLE_PRESSURE_PLATE`, `ACACIA_PRESSURE_PLATE`, `CHERRY_PRESSURE_PLATE`, `DARK_OAK_PRESSURE_PLATE`, `MANGROVE_PRESSURE_PLATE`, `BAMBOO_PRESSURE_PLATE`, `CRIMSON_PRESSURE_PLATE` en `WARPED_PRESSURE_PLATE`.
+
+Een voorbeeld: `/teleporter create OAK_PRESSURE_PLATE false true` geeft een eiken drukplaat zonder tekst, met een afgeronde kijkrichting.
+
+## Configuratie
+
+De zwevende tekst stel je in `config.yml` in.
+
+```yaml
+teleporter:
+  lines:
+  - <gold>Teleporter
+  - <grey><x>;<y>;<z>;<world>
+```
+
+| Sleutel | Wat het doet |
+|---|---|
+| `teleporter.lines` | De regels van de zwevende tekst, in MiniMessage. `<x>`, `<y>` en `<z>` zijn de coördinaten van de bestemming zonder decimalen. `<world>` is de naam van de wereld. |
+
+De tekst wordt gemaakt op het moment dat je de drukplaat neerzet. Pas je de regels later aan, dan veranderen bestaande teleporters niet mee.
+
+<Info>
+  Voor ontwikkelaars: bij het gebruik van een teleporter roept de plugin `PlayerUseTeleporterEvent` aan. Annuleer je dat event, dan wordt de speler niet geteleporteerd.
+</Info>
