@@ -1,0 +1,104 @@
+---
+title: "Pterodactyl"
+description: "Het portaal draaien als server in je Pterodactyl-panel, met het egg uit de repository."
+icon: "server"
+---
+
+{/* Bron: omt-portal (origin/main) pterodactyl/egg-openminetopia-portal.json, docker/pterodactyl-entrypoint.sh, docker/pterodactyl-start.sh, Dockerfile, .github/workflows/release.yml, README.md, app/Console/Commands/PortalInstall.php, app/Console/Commands/PortalAdminLink.php, app/Console/Commands/PortalWaitForDatabase.php */}
+
+Heb je een Pterodactyl-panel? Dan draai je het portaal als gewone server met het egg **OpenMinetopia Portal**. Het portaal richt zichzelf in met de variabelen die je bij **Startup** invult.
+
+## Installeren
+
+<Steps>
+  <Step title="Importeer het egg">
+    Download [`egg-openminetopia-portal.json`](https://github.com/OpenMinetopia/portal/blob/main/pterodactyl/egg-openminetopia-portal.json) uit de map `pterodactyl` van de repository. Importeer het in je panel via **Admin**, **Nests**, **Import Egg**.
+  </Step>
+  <Step title="Maak een server">
+    Maak een server met het egg **OpenMinetopia Portal**. De poort van deze server is de poort waarop het portaal luistert.
+  </Step>
+  <Step title="Maak een database">
+    Open de server en maak op het tabblad **Databases** een database aan. Je krijgt dan een host, poort, databasenaam, gebruiker en wachtwoord.
+  </Step>
+  <Step title="Vul de variabelen in">
+    Vul bij **Startup** de naam, het adres van het portaal, de plugin en de databasegegevens in. Zie de tabel hieronder.
+  </Step>
+  <Step title="Start de server">
+    De console laat zien wat je in de `config.yml` van de plugin zet, en een link om beheerder te worden.
+  </Step>
+</Steps>
+
+Bij het installeren van de server maakt het egg alleen de map `storage` en een leeg `.env` aan. Het portaal zelf zit in het image `ghcr.io/openminetopia/portal-pterodactyl:latest`.
+
+## Startup-variabelen
+
+| Variabele | Naam in het panel | Standaard | Regels | Wat je invult |
+|---|---|---|---|---|
+| `PORTAL_NAME` | Naam van het portaal | leeg | `required\|string\|max:60` | Spelers zien deze naam bovenaan het portaal. |
+| `PORTAL_URL` | Adres van het portaal | leeg | `required\|url` | Waar spelers het portaal openen, met `http://` of `https://`. Bijvoorbeeld `https://portaal.jouwserver.nl`, of `http://IP:POORT` van deze server. |
+| `SERVER_ADDRESS` | Serveradres voor spelers | leeg | `nullable\|string\|max:255` | Wat spelers in Minecraft invullen, bijvoorbeeld `play.jouwserver.nl`. Mag leeg blijven. |
+| `PLUGIN_HOST` | Adres van de plugin | leeg | `required\|string\|max:255` | Het IP-adres van de Minecraft-server waar de plugin draait. Niet `127.0.0.1`: dat is het portaal zelf. |
+| `PLUGIN_PORT` | Poort van de plugin | `4567` | `required\|integer\|between:1,65535` | `rest-api.port` uit de `config.yml` van de plugin. |
+| `DB_HOST` | Database host | leeg | `required\|string\|max:255` | Van het tabblad **Databases**. |
+| `DB_PORT` | Database poort | `3306` | `required\|integer\|between:1,65535` | Van het tabblad **Databases**. |
+| `DB_DATABASE` | Database naam | leeg | `required\|string\|max:64` | Van het tabblad **Databases**. |
+| `DB_USERNAME` | Database gebruiker | leeg | `required\|string\|max:64` | Van het tabblad **Databases**. |
+| `DB_PASSWORD` | Database wachtwoord | leeg | `required\|string\|max:255` | Van het tabblad **Databases**. |
+
+Het portaal verbindt met de database als MySQL.
+
+## Wat er bij elke start gebeurt
+
+Bij elke start:
+
+1. Wacht het portaal maximaal 60 seconden op de database.
+2. Draait het `portal:install` met de variabelen van de server. De sleutels en gegevens blijven bewaard. Een gewijzigde variabele gaat dus in bij de volgende start.
+3. Zolang er nog geen beheerder is, maakt het een nieuwe link om beheerder te worden.
+4. Start het de webserver op de poort van de server.
+
+## Wat de console laat zien
+
+In de console zie je eerst het blok voor de `config.yml` van de plugin:
+
+```text
+Zet dit in plugins/OpenMinetopia/config.yml en herstart de Minecraft-server:
+
+    rest-api:
+      enabled: true
+      host: 0.0.0.0
+      port: 4567
+      api-key: plt_...
+    portal:
+      enabled: true
+      url: portaal.jouwserver.nl
+      token: ist_...
+```
+
+Draait je portaal op `http://`, dan staat bij `url` het volledige adres, en zie je ook deze waarschuwing: "Je portaal draait zonder HTTPS. De plugin koppelt accounts (/koppel) nu alleen via https://, dus koppelen werkt pas met HTTPS of met een plugin-versie die http:// in portal.url ondersteunt." Zo'n plugin-versie is een build van de `master`-branch van de plugin, of een release die nieuwer is dan 1.5.0.
+
+Is er nog geen beheerder, dan volgt de link:
+
+```text
+Open deze link en log in of maak een account aan. Daarna ben je beheerder.
+De link werkt één keer en is 24 uur geldig. Een nieuwe link maakt de vorige ongeldig.
+
+  https://portaal.jouwserver.nl/beheerder-worden/...
+```
+
+Tot slot zie je `Portaal draait op poort 8080.`, met de poort van jouw server. Dan staat de server in het panel op online.
+
+<Tip>
+Is de link verlopen? Herstart de server. Zolang er geen beheerder is, krijg je bij elke start een nieuwe link. De link van de vorige start werkt dan niet meer.
+</Tip>
+
+Zet het blok in `plugins/OpenMinetopia/config.yml` op je Minecraft-server en herstart die. Wat elke regel doet, lees je bij [Koppelen met de plugin](/portaal/koppelen).
+
+## HTTPS
+
+Het portaal luistert met gewone HTTP op de poort van de server. Wil je HTTPS, zet er dan een reverse proxy zoals nginx of Caddy, of Cloudflare voor. Vul bij `PORTAL_URL` dan het `https://`-adres in.
+
+Gebruik je geen HTTPS, vul dan `http://`, het IP-adres en de poort van de server in, bijvoorbeeld `http://203.0.113.10:8080`.
+
+## Updaten
+
+Het portaal zit in het image, niet in de bestanden van je server. Daarin staan je `.env` en de map `storage`. Start je de server met een nieuwer image, dan draait de nieuwe versie. Bij het starten werkt `portal:install` de database bij. Meer bij [Updaten en backups](/portaal/updaten#pterodactyl).

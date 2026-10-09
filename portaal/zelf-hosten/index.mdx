@@ -1,0 +1,76 @@
+---
+title: "Zelf hosten"
+description: "De vier manieren om het portaal op je eigen server te draaien, wat je per manier nodig hebt en wat je eraan overhoudt."
+icon: "server"
+---
+
+{/* Bron: omt-portal (origin/main) README.md, install.sh, docker-compose.yml, Dockerfile, docker/Caddyfile, docker/entrypoint.sh, docker/pterodactyl-start.sh, pterodactyl/egg-openminetopia-portal.json, app/Console/Commands/PortalInstall.php, app/Console/Commands/PortalAdminLink.php, config/portal.php, CONTRIBUTING.md */}
+
+Je kunt het portaal ook op je eigen server draaien. De code staat op [GitHub](https://github.com/OpenMinetopia/portal). Wil je niets installeren, neem dan een [gehost portaal](/portaal/gehost).
+
+## Vier manieren
+
+| Manier | Voor wie | Wat je nodig hebt |
+|---|---|---|
+| [Installatiescript](/portaal/zelf-hosten/installatiescript) | Je hebt een eigen Linux-server of VPS. Dit is de aanbevolen manier. | Een Linux-server met Docker en Docker Compose. Heb je Docker nog niet, dan biedt het script aan het te installeren. Je start het script met `sudo`. |
+| [Docker](/portaal/zelf-hosten/docker) | Je wilt Docker Compose zelf beheren, zonder script. | Docker met Docker Compose. |
+| [Pterodactyl](/portaal/zelf-hosten/pterodactyl) | Je hebt een Pterodactyl-panel. | Toegang tot het beheer van je panel om een egg te importeren, en een database via het tabblad **Databases**. |
+| [Handmatig](/portaal/zelf-hosten/handmatig) | Je hebt al een webserver met PHP. | PHP 8.4 met de extensies `pdo_mysql`, `intl`, `zip` en `bcmath`, Composer, Node.js 22, MySQL, MariaDB of SQLite, en een webserver zoals nginx, Apache of Caddy. |
+
+## Verschillen
+
+| | Installatiescript | Docker | Pterodactyl | Handmatig |
+|---|---|---|---|---|
+| Database | MariaDB 11, zit erbij | MariaDB 11, zit erbij | Een database van je panel | Je eigen MySQL, MariaDB of SQLite |
+| HTTPS | Automatisch met een domeinnaam | Automatisch met een domeinnaam | Nee, alleen HTTP. Zet er zelf een reverse proxy of Cloudflare voor. | Regel je zelf in je webserver |
+| Bijwerken | `openminetopia-portal update` | `docker compose pull` en `docker compose up -d` | Herstart met een nieuwer image | `git pull`, `composer`, `npm` en `migrate` |
+| Beheercommando | `openminetopia-portal` | Nee | Nee | Nee |
+
+Het script en de Docker-manier gebruiken hetzelfde `docker-compose.yml`. Het script vult de instellingen voor je in en zet er een beheercommando bij.
+
+<Note>
+Met een IP-adres in plaats van een domeinnaam draait je portaal zonder HTTPS. Spelers koppelen hun account dan pas met `/koppel` als je een plugin-versie hebt die `http://` in `portal.url` ondersteunt. Dat kan met een build van de `master`-branch van de plugin, of met een release die nieuwer is dan 1.5.0. Zie [Koppelen met de plugin](/portaal/koppelen).
+</Note>
+
+## Wat je eraan overhoudt
+
+Elke manier eindigt met `php artisan portal:install`. Het installatiescript en het Pterodactyl-egg doen dat voor je. Daarna heb je:
+
+- **Het portaal en een database.** De database is ingericht en klaar voor gebruik.
+- **Een blok voor de `config.yml` van de plugin.** Met je eigen sleutels erin. Zet het in `plugins/OpenMinetopia/config.yml` en herstart de Minecraft-server. Wat elke regel doet, lees je bij [Koppelen met de plugin](/portaal/koppelen).
+- **Een link om beheerder te worden.** De link werkt één keer en is 24 uur geldig. Open hem en log in of maak een account aan. Daarna ben je beheerder.
+
+Het blok ziet er zo uit:
+
+```yaml
+rest-api:
+  enabled: true
+  host: 0.0.0.0
+  port: 4567
+  api-key: plt_...
+portal:
+  enabled: true
+  url: portaal.jouwserver.nl
+  token: ist_...
+```
+
+Bij `host` staat `127.0.0.1` als het portaal de plugin op `127.0.0.1`, `localhost` of `::1` bereikt. Anders staat er `0.0.0.0`. Bij `url` staat alleen de hostnaam als je portaal op `https://` draait. Draait het op `http://`, dan staat het volledige adres er, zoals `http://203.0.113.10`.
+
+## Kies je manier
+
+<CardGroup cols={2}>
+  <Card title="Installatiescript" icon="terminal" href="/portaal/zelf-hosten/installatiescript">
+    Eén commando op een Linux-server. Het script stelt een paar vragen en doet de rest.
+  </Card>
+  <Card title="Docker" icon="box" href="/portaal/zelf-hosten/docker">
+    Zelf draaien met `docker compose`, zonder script.
+  </Card>
+  <Card title="Pterodactyl" icon="server" href="/portaal/zelf-hosten/pterodactyl">
+    Importeer het egg en vul de variabelen in.
+  </Card>
+  <Card title="Handmatig installeren" icon="code" href="/portaal/zelf-hosten/handmatig">
+    Met PHP, Composer en Node.js op je eigen webserver.
+  </Card>
+</CardGroup>
+
+Draait het portaal? Lees dan [Updaten en backups](/portaal/updaten). Gaat er iets mis, kijk bij [Problemen oplossen](/portaal/problemen).

@@ -112,6 +112,18 @@
                   "portaal/gehost",
                   "portaal/koppelen"
                 ]
+              },
+              {
+                "group": "Zelf hosten",
+                "pages": [
+                  "portaal/zelf-hosten/index",
+                  "portaal/zelf-hosten/installatiescript",
+                  "portaal/zelf-hosten/docker",
+                  "portaal/zelf-hosten/pterodactyl",
+                  "portaal/zelf-hosten/handmatig",
+                  "portaal/updaten",
+                  "portaal/problemen"
+                ]
               }
             ]
           },

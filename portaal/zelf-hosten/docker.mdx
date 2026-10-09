@@ -1,0 +1,146 @@
+---
+title: "Docker"
+description: "Het portaal zelf draaien met Docker Compose, zonder het installatiescript."
+icon: "box"
+---
+
+{/* Bron: omt-portal (origin/main) docker-compose.yml, Dockerfile, docker/Caddyfile, docker/entrypoint.sh, install.sh, .github/workflows/release.yml, app/Console/Commands/PortalInstall.php, app/Console/Commands/PortalWaitForDatabase.php */}
+
+Wil je Docker Compose zelf beheren? Dan gebruik je hetzelfde `docker-compose.yml` als het [installatiescript](/portaal/zelf-hosten/installatiescript), maar vul je de instellingen zelf in. Je krijgt dan geen commando `openminetopia-portal`.
+
+## De images
+
+Er zijn twee images. Ze worden gebouwd voor `linux/amd64` en `linux/arm64`.
+
+| Image | Waarvoor |
+|---|---|
+| `ghcr.io/openminetopia/portal` | Docker Compose. Bevat FrankenPHP: de webserver met automatisch HTTPS. |
+| `ghcr.io/openminetopia/portal-pterodactyl` | Het [Pterodactyl-egg](/portaal/zelf-hosten/pterodactyl). |
+
+| Tag | Wanneer |
+|---|---|
+| `latest` | De nieuwste versie van de `main`-branch. |
+| `edge` | Ook de nieuwste versie van de `main`-branch. |
+| `1.2.3` en `1.2` | Komt erbij als er een versie-tag zoals `v1.2.3` wordt gemaakt. |
+
+## Wat erin zit
+
+`docker-compose.yml` start twee services:
+
+| Service | Image | Wat het doet |
+|---|---|---|
+| `portal` | `ghcr.io/openminetopia/portal:latest`, of het image uit `PORTAL_IMAGE` | Het portaal met de webserver. Start pas als de database gezond is. |
+| `db` | `mariadb:11` | De database `portal` met gebruiker `portal`. |
+
+De `portal`-service kan een plugin op dezelfde machine bereiken via `host.docker.internal`.
+
+### Volumes
+
+| Volume | Plek in de container | Wat erin staat |
+|---|---|---|
+| `./portal.env` | `/app/.env` | De instellingen van het portaal. `portal:install` schrijft hierin. |
+| `storage` | `/app/storage` | Geüploade bestanden en de cache van het portaal. |
+| `db` | `/var/lib/mysql` | De database. |
+| `caddy-data` | `/data/caddy` | De HTTPS-certificaten. |
+| `caddy-config` | `/config/caddy` | De configuratie van Caddy. |
+
+### Instellingen in .env
+
+Docker Compose leest deze waarden uit een `.env` naast `docker-compose.yml`:
+
+| Variabele | Standaard | Wat het doet |
+|---|---|---|
+| `DB_PASSWORD` | geen, verplicht | Het wachtwoord van de databasegebruiker `portal`. |
+| `DB_ROOT_PASSWORD` | geen, verplicht | Het root-wachtwoord van MariaDB. |
+| `PORTAL_IMAGE` | `ghcr.io/openminetopia/portal:latest` | Het image van het portaal. |
+| `PORTAL_SERVER_NAME` | `:80` | Je domeinnaam voor automatisch HTTPS, of `:80` voor gewoon HTTP op een IP-adres. |
+| `PORTAL_CADDY_OPTIONS` | leeg | Algemene opties voor Caddy. Het installatiescript zet hier `email jij@example.com` in bij een domeinnaam. |
+| `PORTAL_HTTP_PORT` | `80` | De HTTP-poort op je server. |
+| `PORTAL_HTTPS_PORT` | `443` | De HTTPS-poort op je server, voor TCP en UDP. |
+
+Ontbreekt `DB_PASSWORD` of `DB_ROOT_PASSWORD`, dan start Docker Compose niet. Je ziet dan "Zet DB_PASSWORD in .env" of "Zet DB_ROOT_PASSWORD in .env".
+
+## Installeren
+
+<Steps>
+  <Step title="Download docker-compose.yml">
+    Maak een map en download het bestand:
+
+    ```bash
+    mkdir -p /opt/openminetopia-portal && cd /opt/openminetopia-portal
+    curl -fsSL https://raw.githubusercontent.com/OpenMinetopia/portal/main/docker-compose.yml -o docker-compose.yml
+    ```
+  </Step>
+  <Step title="Maak .env">
+    Zet de instellingen uit de tabel hierboven in `.env`. Met een domeinnaam ziet dat er bijvoorbeeld zo uit:
+
+    ```bash
+    PORTAL_SERVER_NAME=portaal.jouwserver.nl
+    PORTAL_CADDY_OPTIONS=email jij@example.com
+    DB_PASSWORD=een-lang-willekeurig-wachtwoord
+    DB_ROOT_PASSWORD=nog-een-lang-willekeurig-wachtwoord
+    ```
+
+    Zonder domeinnaam laat je `PORTAL_SERVER_NAME` en `PORTAL_CADDY_OPTIONS` weg. Het portaal draait dan op HTTP.
+  </Step>
+  <Step title="Maak een leeg portal.env">
+    Het portaal draait in de container als `www-data` (gebruiker 33) en schrijft zijn instellingen in dit bestand. Maak het aan voordat je start, anders maakt Docker er een map van.
+
+    ```bash
+    touch portal.env
+    chown 33:33 portal.env
+    chmod 600 portal.env
+    ```
+  </Step>
+  <Step title="Start het portaal">
+    ```bash
+    docker compose up -d
+    ```
+
+    Het portaal is nog niet ingericht. In de logs zie je dan "Het portaal is nog niet ingericht. Draai: php artisan portal:install". Alleen de webserver draait.
+  </Step>
+  <Step title="Richt het portaal in">
+    Draai `portal:install` met dezelfde databasegegevens als het installatiescript. Vul bij `--db-password` de waarde van `DB_PASSWORD` uit `.env` in:
+
+    ```bash
+    docker compose exec portal php artisan portal:install \
+      --db-connection=mariadb --db-host=db --db-port=3306 \
+      --db-database=portal --db-username=portal --db-password=<DB_PASSWORD>
+    ```
+
+    Het commando vraagt daarna de naam, het adres van je portaal, het serveradres voor spelers en waar de plugin draait. Draait de Minecraft-server op dezelfde machine, vul dan `host.docker.internal` in als adres van de plugin. Alle vragen en opties staan bij [Handmatig installeren](/portaal/zelf-hosten/handmatig).
+
+    Vul als adres van je portaal `https://` en je domeinnaam in, of `http://` en het IP-adres. Gebruik je een andere poort dan 80 of 443, zet die dan achter het adres.
+  </Step>
+  <Step title="Koppel de plugin en word beheerder">
+    Je ziet het blok voor de `config.yml` van de plugin en een link om beheerder te worden. Zie [Zelf hosten](/portaal/zelf-hosten#wat-je-eraan-overhoudt).
+  </Step>
+</Steps>
+
+## Wat er bij elke start gebeurt
+
+Bij elke start van de `portal`-container:
+
+1. Wacht het portaal op de database, standaard maximaal 60 seconden.
+2. Is het portaal ingericht, dan werkt het de database bij en maakt het de cache voor config, routes en views opnieuw.
+3. Daarna start de webserver.
+
+Twee variabelen voor de container passen dit aan. Ze staan niet in `docker-compose.yml`. Zet ze zelf bij `environment` van de `portal`-service als je ze nodig hebt.
+
+| Variabele | Standaard | Wat het doet |
+|---|---|---|
+| `PORTAL_DB_TIMEOUT` | `60` | Hoeveel seconden het portaal maximaal op de database wacht. |
+| `PORTAL_SKIP_BOOT` | `0` | Op `1` slaat het portaal het wachten, bijwerken en cachen over en start het alleen de webserver. |
+
+## Handige commando's
+
+Voer deze uit in de map met `docker-compose.yml`:
+
+| Commando | Wat het doet |
+|---|---|
+| `docker compose logs -f portal` | Volgt de logs van het portaal. |
+| `docker compose exec portal php artisan portal:check` | Test of het portaal de plugin bereikt. |
+| `docker compose exec portal php artisan portal:admin-link` | Maakt een nieuwe link om beheerder te worden. |
+| `docker compose exec portal php artisan portal:install` | Stelt de naam, het adres of de plugin opnieuw in. Verander je het adres, zet het dan ook in `PORTAL_SERVER_NAME` in `.env` en voer `docker compose up -d` uit. |
+
+Bijwerken en back-ups maken lees je bij [Updaten en backups](/portaal/updaten#docker-zonder-script).

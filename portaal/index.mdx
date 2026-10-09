@@ -4,9 +4,14 @@ description: "Een open-source webapp waarin spelers hun rekeningen, plots, straf
 icon: "globe"
 ---
 
-{/* Bron: omt-portal (origin/main) routes/web.php, routes/api.php, resources/views/portal/layouts/partials/sidebar-content.blade.php, resources/views/portal/dashboard.blade.php, resources/views/portal/admin/settings/index.blade.php, resources/views/auth/register.blade.php, resources/views/auth/verify.blade.php, app/Http/Controllers/Portal/*, app/Http/Controllers/Api/MinecraftVerificationController.php, app/Http/Middleware/ValidateApiKey.php, app/Services/Plugin/*, database/migrations/tenant/2024_12_10_000001_create_critical_data.php, database/migrations/tenant/2024_12_11_000007_add_transactions_feature.php; openminetopia src/main/java/nl/openminetopia/modules/portal/, src/main/java/nl/openminetopia/modules/restapi/; omt-website resources/views/website/pages/homepage.blade.php */}
+{/* Bron: omt-portal (origin/main) README.md, LICENSE, composer.json, docs/screenshots/, routes/web.php, routes/api.php, resources/views/portal/layouts/app.blade.php, resources/views/portal/layouts/partials/sidebar-content.blade.php, resources/views/portal/dashboard.blade.php, resources/views/portal/admin/settings/index.blade.php, resources/views/auth/register.blade.php, resources/views/auth/verify.blade.php, app/Http/Controllers/Portal/*, app/Http/Controllers/Api/MinecraftVerificationController.php, app/Http/Middleware/ValidateApiKey.php, app/Services/Plugin/*, app/Services/Tenancy/AdminClaim.php, app/Console/Commands/PortalAdminLink.php, app/Support/Portal.php, config/portal.php, database/migrations/2024_12_10_000001_create_critical_data.php, database/migrations/2024_12_11_000007_add_transactions_feature.php; openminetopia src/main/java/nl/openminetopia/modules/portal/, src/main/java/nl/openminetopia/modules/restapi/; omt-website resources/views/website/pages/homepage.blade.php */}
 
-Het portaal is een open-source webapp die met de OpenMinetopia-plugin praat. Spelers zien er in de browser hun bankrekeningen, plots, strafblad en meer. Het portaal is gebouwd met Laravel en staat op [GitHub](https://github.com/OpenMinetopia/portal).
+Het portaal is een open-source webapp die met de OpenMinetopia-plugin praat. Spelers zien er in de browser hun bankrekeningen, plots, strafblad en meer. Het portaal is gebouwd met Laravel en staat op [GitHub](https://github.com/OpenMinetopia/portal). De code valt onder de GPL-3.0-licentie.
+
+<Frame>
+  <img className="block dark:hidden" src="/images/portaal/dashboard-light.webp" alt="Het overzicht van het portaal met saldo, aantal plots, baan, level en fitheid van de speler, en links het menu" />
+  <img className="hidden dark:block" src="/images/portaal/dashboard-dark.webp" alt="Het overzicht van het portaal met saldo, aantal plots, baan, level en fitheid van de speler, en links het menu" />
+</Frame>
 
 ## Wat spelers kunnen
 
@@ -23,6 +28,31 @@ Een speler maakt een account aan op het portaal met zijn naam, e-mailadres, Mine
 | **Mijn bedrijven** en **Bedrijvenregister** | Een bedrijf aanvragen, de opheffing van je bedrijf aanvragen en het register doorzoeken. |
 
 Kost een vergunning of bedrijf geld, dan betaal je met een van je bankrekeningen. Het geld gaat naar de uitbetalingsrekening die de beheerder heeft gekozen.
+
+Het portaal heeft een licht en een donker thema. Je wisselt met de knop onderaan het menu.
+
+<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  <Frame caption="Mijn bankrekeningen">
+    <img className="block dark:hidden" src="/images/portaal/bank-light.webp" alt="De pagina Mijn bankrekeningen met het aantal rekeningen, het totale saldo en een tabel met een privérekening en een overheidsrekening" />
+    <img className="hidden dark:block" src="/images/portaal/bank-dark.webp" alt="De pagina Mijn bankrekeningen met het aantal rekeningen, het totale saldo en een tabel met een privérekening en een overheidsrekening" />
+  </Frame>
+  <Frame caption="Mijn plots">
+    <img className="block dark:hidden" src="/images/portaal/plots-light.webp" alt="De pagina Mijn plots met drie plots, of je eigenaar of lid bent en de locatie van elke plot" />
+    <img className="hidden dark:block" src="/images/portaal/plots-dark.webp" alt="De pagina Mijn plots met drie plots, of je eigenaar of lid bent en de locatie van elke plot" />
+  </Frame>
+  <Frame caption="Makelaar">
+    <img className="block dark:hidden" src="/images/portaal/makelaar-light.webp" alt="De makelaar met een plot te koop: prijs, verkoper, beschrijving, coördinaten en een knop om de plot te kopen" />
+    <img className="hidden dark:block" src="/images/portaal/makelaar-dark.webp" alt="De makelaar met een plot te koop: prijs, verkoper, beschrijving, coördinaten en een knop om de plot te kopen" />
+  </Frame>
+  <Frame caption="Mijn vergunningen">
+    <img className="block dark:hidden" src="/images/portaal/vergunningen-light.webp" alt="De pagina Vergunningen met drie vergunningen om aan te vragen, elk met prijs en vereiste informatie, en daaronder je eigen aanvragen" />
+    <img className="hidden dark:block" src="/images/portaal/vergunningen-dark.webp" alt="De pagina Vergunningen met drie vergunningen om aan te vragen, elk met prijs en vereiste informatie, en daaronder je eigen aanvragen" />
+  </Frame>
+  <Frame caption="Bedrijvenregister">
+    <img className="block dark:hidden" src="/images/portaal/bedrijven-light.webp" alt="Het bedrijvenregister met zoeken op naam, KvK-nummer of beschrijving, filters op status en type, en een bedrijf met zijn KvK-nummer" />
+    <img className="hidden dark:block" src="/images/portaal/bedrijven-dark.webp" alt="Het bedrijvenregister met zoeken op naam, KvK-nummer of beschrijving, filters op status en type, en een bedrijf met zijn KvK-nummer" />
+  </Frame>
+</div>
 
 ## Wat beheerders kunnen
 
@@ -46,15 +76,20 @@ Deze functies staan in een nieuw portaal uit. Een beheerder zet ze aan bij **Ins
 - **Makelaar**
 - **Banktransacties**
 
+<Frame caption="Instellingen">
+  <img className="block dark:hidden" src="/images/portaal/beheer-light.webp" alt="De instellingen voor beheerders met vinkjes voor Bedrijven, Vergunningen, Makelaar en Banktransacties, en de status van de verbinding met de plugin" />
+  <img className="hidden dark:block" src="/images/portaal/beheer-dark.webp" alt="De instellingen voor beheerders met vinkjes voor Bedrijven, Vergunningen, Makelaar en Banktransacties, en de status van de verbinding met de plugin" />
+</Frame>
+
 <Note>
-Wie zich registreert, wordt gewone speler. Bij een gehost portaal word je beheerder via de knop **Inloggen als beheerder** op openminetopia.nl. Zie [Gehost portaal](/portaal/gehost#beheerder-worden).
+Wie zich registreert, wordt gewone speler. Je wordt beheerder via een eenmalige link, of doordat een andere beheerder je een beheerdersrol geeft bij **Gebruikers**. Bij een gehost portaal krijg je de link via de knop **Inloggen als beheerder** op openminetopia.nl. Zie [Gehost portaal](/portaal/gehost#beheerder-worden). Host je het portaal zelf, dan maak je de link op de server met `php artisan portal:admin-link`, of met `openminetopia-portal admin-link` als je het installatiescript gebruikte.
 </Note>
 
 ## Hoe het portaal met de plugin praat
 
 Het portaal en de plugin praten in twee richtingen met elkaar.
 
-- **Portaal naar plugin.** Het portaal haalt alle gegevens op via de [REST API](/plugin/rest-api) van de plugin. Het stuurt bij elke aanvraag de `api-key` uit `rest-api` in de header `X-API-Key` mee. Zonder geldige key antwoordt de plugin met 401.
+- **Portaal naar plugin.** Het portaal haalt de gegevens uit de game op via de [REST API](/plugin/rest-api) van de plugin. Het stuurt bij elke aanvraag de `api-key` uit `rest-api` in de header `X-API-Key` mee. Zonder geldige key antwoordt de plugin met 401.
 - **Plugin naar portaal.** Typt een speler `/koppel <code>`, dan roept de plugin `/api/minecraft/verify` op het portaal aan. De plugin stuurt daarbij de `token` uit `portal` mee als `X-API-Key`.
 
 De plugin moet dus bereikbaar zijn voor het portaal, en het portaal voor de plugin. Welke instellingen daarvoor nodig zijn, staat bij [Koppelen met de plugin](/portaal/koppelen).
@@ -67,9 +102,16 @@ Je kunt het portaal op twee manieren draaien.
   <Card title="Gehost via openminetopia.nl" icon="cloud" href="/portaal/gehost">
     Gratis. Je krijgt een portaal op een eigen adres op `mtportal.nl`. Wij regelen de server.
   </Card>
-  <Card title="Zelf hosten" icon="server" href="https://github.com/OpenMinetopia/portal">
-    Draai het portaal op je eigen server. De code staat op GitHub.
+  <Card title="Zelf hosten" icon="server" href="/portaal/zelf-hosten">
+    Draai het portaal op je eigen server, met Docker, Pterodactyl of een eigen webserver.
   </Card>
 </CardGroup>
 
-Een handleiding voor zelf hosten komt binnenkort op deze wiki.
+Host je het zelf, dan kies je een van deze manieren:
+
+- [Installatiescript](/portaal/zelf-hosten/installatiescript): één commando dat het portaal met Docker installeert.
+- [Docker](/portaal/zelf-hosten/docker): het portaal zelf met Docker Compose draaien.
+- [Pterodactyl](/portaal/zelf-hosten/pterodactyl): het portaal als server in je Pterodactyl-panel.
+- [Handmatig](/portaal/zelf-hosten/handmatig): met PHP, Composer en Node.js op je eigen webserver.
+
+Draait je portaal al? Lees dan hoe je het [bijwerkt](/portaal/updaten) en wat je doet bij [problemen](/portaal/problemen).

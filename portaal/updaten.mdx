@@ -1,0 +1,107 @@
+---
+title: "Updaten en backups"
+description: "Een zelf gehost portaal bijwerken naar de nieuwste versie en een back-up maken, per manier van installeren."
+icon: "download"
+---
+
+{/* Bron: omt-portal (origin/main) install.sh (het commando openminetopia-portal), docker-compose.yml, docker/entrypoint.sh, docker/pterodactyl-start.sh, Dockerfile, pterodactyl/egg-openminetopia-portal.json, .github/workflows/release.yml, README.md, SECURITY.md, app/Console/Commands/PortalInstall.php, docs/HOSTING.md */}
+
+Deze pagina gaat over een zelf gehost portaal. Een [gehost portaal](/portaal/gehost) werken wij zelf bij.
+
+Alleen de nieuwste versie op de `main`-branch krijgt beveiligingsupdates. Werk je portaal dus regelmatig bij.
+
+## Installatiescript
+
+### Updaten
+
+```bash
+openminetopia-portal update
+```
+
+Dit haalt de nieuwste images op en herstart het portaal. Je ziet "Bijgewerkt. Het portaal migreert de database zelf bij het opstarten."
+
+Het commando haalt geen nieuw `docker-compose.yml` op. Dat doet het [installatiescript](/portaal/zelf-hosten/installatiescript) wel. Draai je het script opnieuw, dan blijven je gegevens, wachtwoorden en sleutels bewaard. Het stelt wel de vragen opnieuw en maakt een nieuwe link om beheerder te worden.
+
+### Back-up
+
+```bash
+openminetopia-portal backup
+```
+
+Dit maakt twee bestanden in `/opt/openminetopia-portal`, of in de map uit `OMT_DIR`:
+
+| Bestand | Wat erin staat |
+|---|---|
+| `backup-JJJJMMDD-UUMMSS.sql.gz` | Een dump van de database `portal`. |
+| `bestanden-JJJJMMDD-UUMMSS.tar.gz` | De geüploade bestanden uit `storage/app/public`, zoals afbeeldingen van plots die te koop staan. |
+
+`.env` en `portal.env` zitten niet in de back-up. Daarin staan de databasewachtwoorden en de sleutels van het portaal en de plugin. Bewaar die twee bestanden ook als je alles wilt kunnen terugzetten.
+
+Het commando `openminetopia-portal` kan een back-up niet terugzetten.
+
+## Docker zonder script
+
+### Updaten
+
+Voer in de map met `docker-compose.yml` uit:
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+Bij het starten werkt het portaal de database zelf bij.
+
+### Back-up
+
+Dit zijn dezelfde commando's die `openminetopia-portal backup` gebruikt. Voer ze uit in de map met `docker-compose.yml`:
+
+```bash
+stamp=$(date +%Y%m%d-%H%M%S)
+docker compose exec -T db sh -c 'exec mariadb-dump -uroot -p"$MARIADB_ROOT_PASSWORD" --single-transaction portal' | gzip > "backup-$stamp.sql.gz"
+docker compose exec -T portal tar -C /app/storage/app -czf - public > "bestanden-$stamp.tar.gz"
+```
+
+Bewaar ook `.env` en `portal.env`.
+
+## Pterodactyl
+
+### Updaten
+
+Het portaal zit in het image `ghcr.io/openminetopia/portal-pterodactyl:latest`, niet in de bestanden van je server. Start je de server met een nieuwer image, dan draait de nieuwe versie. Bij elke start werkt `portal:install` de database bij.
+
+### Back-up
+
+Bewaar twee dingen:
+
+- De database die je op het tabblad **Databases** hebt gemaakt.
+- De bestanden van de server: `.env` en de map `storage`.
+
+## Handmatig
+
+### Updaten
+
+Voer in de map van het portaal uit:
+
+```bash
+git pull
+composer install --no-dev --optimize-autoloader
+npm ci && npm run build
+php artisan migrate --force
+```
+
+### Back-up
+
+Bewaar drie dingen:
+
+- Een dump van je database. Gebruik je SQLite, dan is dat het bestand uit `DB_DATABASE` in `.env`, standaard `database/database.sqlite`.
+- De map `storage/app/public`, met de geüploade bestanden.
+- Je `.env`, met de sleutels van het portaal en de plugin.
+
+## Een vaste versie
+
+Het installatiescript en het egg gebruiken het image met de tag `latest`. Dat is altijd de nieuwste versie van `main`. Wordt er een versie-tag zoals `v1.2.3` gemaakt, dan komen er ook images met de tags `1.2.3` en `1.2`. Met Docker Compose kies je het image met `PORTAL_IMAGE` in `.env`. Zie [Docker](/portaal/zelf-hosten/docker#de-images).
+
+<Warning>
+Raak je `.env` of `portal.env` kwijt, dan ben je de sleutels kwijt. `portal:install` maakt dan nieuwe, en die moet je ook in de `config.yml` van de plugin zetten.
+</Warning>

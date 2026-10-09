@@ -1,0 +1,184 @@
+---
+title: "Installatiescript"
+description: "Het portaal met één commando installeren op een Linux-server, met Docker, een database en automatisch HTTPS."
+icon: "terminal"
+---
+
+{/* Bron: omt-portal (origin/main) install.sh, docker-compose.yml, Dockerfile, docker/Caddyfile, docker/entrypoint.sh, README.md, app/Console/Commands/PortalInstall.php, app/Console/Commands/PortalAdminLink.php, app/Console/Commands/PortalCheck.php, config/portal.php */}
+
+Het installatiescript zet het portaal met een MariaDB-database in Docker. Het stelt een paar vragen. Daarna zie je wat je in de `config.yml` van de plugin zet en hoe je beheerder wordt.
+
+## Wat je nodig hebt
+
+- Een Linux-server met Docker en Docker Compose. Heb je Docker nog niet, dan vraagt het script of het Docker voor je installeert via `get.docker.com`.
+- Rechten om het script met `sudo` te starten.
+- Voor HTTPS: een domeinnaam die al naar het IP-adres van je server wijst, en poort 80 en 443 open.
+
+Heb je geen domeinnaam, dan draait het portaal op het IP-adres van je server, zonder HTTPS.
+
+## Installeren
+
+Voer dit uit op je server:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/OpenMinetopia/portal/main/install.sh | sudo bash
+```
+
+Het script controleert eerst of Docker draait. Staat er al een portaal in de map, dan vraagt het "Opnieuw instellen? Je gegevens en sleutels blijven bewaard."
+
+## De vragen
+
+| Vraag | Wat je invult |
+|---|---|
+| **Domeinnaam of IP-adres** | Het adres van je portaal, bijvoorbeeld `portaal.jouwserver.nl`. Heb je geen domein, vul dan het IP-adres van de server in. Een `http://` of `https://` ervoor en een pad erachter haalt het script weg. |
+| **E-mailadres** | Alleen bij een domeinnaam. Nodig voor het HTTPS-certificaat van Let's Encrypt. |
+| **Naam van je server (zo heet het portaal)** | Spelers zien deze naam bovenaan het portaal. |
+| **Adres waarmee spelers verbinden in Minecraft** | Bijvoorbeeld `play.jouwserver.nl`. Mag leeg blijven. |
+| **Kies 1 of 2** | `1` als de Minecraft-server op dezelfde machine draait, `2` als die ergens anders draait. Standaard `1`. |
+| **IP-adres of hostnaam van de Minecraft-server** | Alleen bij keuze `2`. |
+| **Poort van de plugin-API (rest-api → port)** | De poort uit `rest-api.port` in de `config.yml` van de plugin. Standaard `4567`. |
+
+Kies je `1`, dan bereikt het portaal de plugin via `host.docker.internal`. Dat is vanuit Docker de machine zelf.
+
+### Domeinnaam of IP-adres
+
+| Je vult in | Adres van het portaal | HTTPS |
+|---|---|---|
+| Een domeinnaam | `https://portaal.jouwserver.nl` | Ja, automatisch via Let's Encrypt. Caddy vraagt het certificaat aan als het portaal start. Dat kan een minuut duren. |
+| Een IP-adres | `http://203.0.113.10` | Nee |
+
+Het portaal draait in Docker op FrankenPHP. Dat is Caddy met PHP erin. Caddy regelt het certificaat zelf.
+
+<Warning>
+Zonder HTTPS werkt `/koppel` pas met een plugin-versie die `http://` in `portal.url` ondersteunt. Dat kan met een build van de `master`-branch van de plugin, of met een release die nieuwer is dan 1.5.0. Het script waarschuwt je hiervoor. Zie [Koppelen met de plugin](/portaal/koppelen).
+</Warning>
+
+### Poorten
+
+Het portaal gebruikt poort 80 voor HTTP en poort 443 voor HTTPS. Docker zet beide poorten open, ook bij een IP-adres. Andere poorten stel je in met `OMT_HTTP_PORT` en `OMT_HTTPS_PORT`, zie [Zonder vragen](#zonder-vragen). Kies je een andere poort, dan zet het script die achter het adres van je portaal, bijvoorbeeld `http://203.0.113.10:8080`.
+
+## Wat het script doet
+
+1. Het downloadt `docker-compose.yml` naar `/opt/openminetopia-portal`.
+2. Het maakt daar een `.env` met de instellingen voor Docker Compose en twee willekeurige databasewachtwoorden. Bij opnieuw instellen houdt het de bestaande wachtwoorden.
+3. Het maakt een leeg `portal.env` als dat er nog niet is. Daarin schrijft het portaal zijn eigen instellingen.
+4. Het haalt de images op en start het portaal en de database.
+5. Het wacht tot de database klaar is en draait `php artisan portal:install` met jouw antwoorden.
+6. Het wacht tot het portaal antwoordt en zet het commando `openminetopia-portal` in `/usr/local/bin`.
+
+## Wat je aan het eind ziet
+
+Aan het eind zie je ongeveer dit. Jouw sleutels, adres en link staan erin.
+
+```text
+Zet dit in plugins/OpenMinetopia/config.yml en herstart de Minecraft-server:
+
+    rest-api:
+      enabled: true
+      host: 0.0.0.0
+      port: 4567
+      api-key: plt_...
+    portal:
+      enabled: true
+      url: portaal.jouwserver.nl
+      token: ist_...
+
+Beheerder worden
+Open deze link en log in of maak een account aan. Daarna ben je beheerder.
+De link werkt één keer en is 24 uur geldig. Een nieuwe link maakt de vorige ongeldig.
+
+  https://portaal.jouwserver.nl/beheerder-worden/...
+
+Klaar!
+  Portaal: https://portaal.jouwserver.nl
+  Het HTTPS-certificaat wordt bij het eerste bezoek aangevraagd; dat kan een minuut duren.
+
+  Bijwerken:           openminetopia-portal update
+  Back-up maken:       openminetopia-portal backup
+  Plugin testen:       openminetopia-portal check
+  Nieuwe beheerderslink: openminetopia-portal admin-link
+```
+
+Zo ga je verder:
+
+<Steps>
+  <Step title="Zet het blok in de config.yml van de plugin">
+    Kopieer het blok naar `plugins/OpenMinetopia/config.yml` en herstart de Minecraft-server. Wat elke regel doet, lees je bij [Koppelen met de plugin](/portaal/koppelen).
+  </Step>
+  <Step title="Word beheerder">
+    Open de link. Log in of maak een account aan. Daarna ben je beheerder. Is de link verlopen, maak dan een nieuwe met `openminetopia-portal admin-link`.
+  </Step>
+  <Step title="Test de verbinding">
+    Voer `openminetopia-portal check` uit. Je ziet of het portaal de plugin bereikt. De meldingen staan bij [Problemen oplossen](/portaal/problemen#de-verbinding-met-de-plugin-testen).
+  </Step>
+</Steps>
+
+Bij `host` staat `0.0.0.0`. Het portaal draait in Docker en moet de plugin over het netwerk bereiken, ook als de Minecraft-server op dezelfde machine draait.
+
+## Zonder vragen
+
+Wil je het script zonder vragen draaien, bijvoorbeeld in een eigen script? Download het en geef de antwoorden mee als omgevingsvariabelen:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/OpenMinetopia/portal/main/install.sh -o install.sh
+sudo OMT_NONINTERACTIVE=1 OMT_ADDRESS=portaal.jouwserver.nl OMT_EMAIL=jij@example.com \
+  OMT_NAME="Mijn Server" OMT_SERVER_ADDRESS=play.jouwserver.nl \
+  OMT_PLUGIN_HOST=host.docker.internal OMT_PLUGIN_PORT=4567 bash install.sh
+```
+
+| Variabele | Standaard | Wat het doet |
+|---|---|---|
+| `OMT_NONINTERACTIVE` | `0` | Op `1` stelt het script geen vragen. Elke vraag krijgt de waarde van de variabele hieronder. Ja/nee-vragen worden met ja beantwoord. Op een Linux-server zonder Docker installeert het script Docker dan meteen. |
+| `OMT_ADDRESS` | leeg | Domeinnaam of IP-adres van het portaal. Verplicht zonder vragen. |
+| `OMT_EMAIL` | leeg | E-mailadres voor het certificaat. Verplicht bij een domeinnaam. |
+| `OMT_NAME` | leeg | Naam van het portaal. Verplicht zonder vragen. |
+| `OMT_SERVER_ADDRESS` | leeg | Adres waarmee spelers verbinden. Mag leeg blijven. |
+| `OMT_PLUGIN_HOST` | leeg | Adres van de plugin. Is dit ingevuld, dan slaat het script de vraag "Kies 1 of 2" over. Leeg betekent zonder vragen keuze `1`: `host.docker.internal`. |
+| `OMT_PLUGIN_PORT` | `4567` | Poort van de plugin-API. |
+| `OMT_DIR` | `/opt/openminetopia-portal` | De map waarin het portaal komt. |
+| `OMT_HTTP_PORT` | `80` | De HTTP-poort op je server. |
+| `OMT_HTTPS_PORT` | `443` | De HTTPS-poort op je server. |
+| `OMT_IMAGE` | `ghcr.io/openminetopia/portal:latest` | Het Docker-image van het portaal. |
+| `OMT_REF` | `main` | De git-branch waarvan het script `docker-compose.yml` downloadt. |
+| `OMT_BIN_DIR` | `/usr/local/bin` | Waar het commando `openminetopia-portal` komt. |
+| `OMT_SOURCE` | leeg | Een map met een `docker-compose.yml`. Het script kopieert die in plaats van te downloaden. |
+| `OMT_SKIP_PULL` | `0` | Op `1` haalt het script de images niet op. |
+
+Draai je het script wel met vragen, dan zie je de waarden van `OMT_ADDRESS`, `OMT_EMAIL`, `OMT_NAME`, `OMT_SERVER_ADDRESS` en `OMT_PLUGIN_PORT` als voorgestelde antwoorden.
+
+## Waar alles staat
+
+Alles staat in `/opt/openminetopia-portal`, of in de map uit `OMT_DIR`.
+
+| Bestand | Wat erin staat |
+|---|---|
+| `docker-compose.yml` | Het portaal en de MariaDB-database. |
+| `.env` | De instellingen voor Docker Compose: het image, het adres voor Caddy, de poorten en de databasewachtwoorden. |
+| `portal.env` | De instellingen van het portaal zelf, met de sleutels voor de plugin. In de container is dit `/app/.env`. |
+| `backup-*.sql.gz` en `bestanden-*.tar.gz` | Back-ups die je met `openminetopia-portal backup` maakt. |
+
+De database, de bestanden van het portaal (`storage`) en de certificaten van Caddy staan in Docker-volumes.
+
+<Warning>
+In `.env` en `portal.env` staan je wachtwoorden en sleutels. Deel ze met niemand.
+</Warning>
+
+## Het commando openminetopia-portal
+
+Na de installatie beheer je het portaal met `openminetopia-portal`. Start het met `sudo` als je gebruiker geen rechten voor Docker heeft.
+
+| Commando | Wat het doet |
+|---|---|
+| `openminetopia-portal update` | Haalt de nieuwste versie op en herstart het portaal. Het portaal werkt de database zelf bij tijdens het opstarten. |
+| `openminetopia-portal backup` | Slaat de database en de geüploade bestanden op in de map van het portaal. |
+| `openminetopia-portal check` | Test of het portaal de plugin bereikt en of de api-key klopt. |
+| `openminetopia-portal admin-link` | Maakt een nieuwe eenmalige link om beheerder te worden. De vorige link werkt dan niet meer. |
+| `openminetopia-portal instellen` | Draait `portal:install` opnieuw. Zo stel je de naam, het serveradres voor spelers of de plugin opnieuw in. Een ander adres voor je portaal stel je in door het installatiescript opnieuw te draaien. |
+| `openminetopia-portal logs` | Volgt de logs van het portaal. Stop met `Ctrl+C`. |
+| `openminetopia-portal stop` | Stopt het portaal en de database. |
+| `openminetopia-portal start` | Start het portaal en de database. |
+| `openminetopia-portal artisan <commando>` | Voert een `php artisan`-commando uit in het portaal. |
+
+Zonder commando, of met een onbekend commando, zie je deze lijst in het kort.
+
+Meer over bijwerken en back-ups lees je bij [Updaten en backups](/portaal/updaten).

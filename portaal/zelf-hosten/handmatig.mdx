@@ -1,0 +1,183 @@
+---
+title: "Handmatig installeren"
+description: "Het portaal zonder Docker installeren op een server met PHP, Composer en Node.js."
+icon: "code"
+---
+
+{/* Bron: omt-portal (origin/main) README.md, CONTRIBUTING.md, composer.json, package.json, Dockerfile, docker/Caddyfile, .env.example, config/portal.php, config/queue.php, config/logging.php, routes/console.php, routes/web.php, app/Console/Commands/PortalInstall.php, app/Console/Commands/PortalAdminLink.php, app/Support/EnvFile.php, app/Http/Controllers/Demo/DemoLoginController.php, database/seeders/DemoSeeder.php */}
+
+Heb je al een webserver met PHP? Dan installeer je het portaal zelf vanaf de broncode. Het portaal is een Laravel-app.
+
+## Wat je nodig hebt
+
+- PHP 8.4 met de extensies `pdo_mysql`, `intl`, `zip` en `bcmath`.
+- Composer.
+- Node.js 22, om de stijlen en scripts te bouwen.
+- MySQL, MariaDB of SQLite.
+- Een webserver, zoals nginx, Apache of Caddy.
+
+## Installeren
+
+<Steps>
+  <Step title="Download de code">
+    ```bash
+    git clone https://github.com/OpenMinetopia/portal.git
+    cd portal
+    ```
+  </Step>
+  <Step title="Installeer de afhankelijkheden">
+    ```bash
+    composer install --no-dev --optimize-autoloader
+    npm ci && npm run build
+    ```
+  </Step>
+  <Step title="Richt het portaal in">
+    ```bash
+    php artisan portal:install
+    ```
+
+    Het commando stelt een paar vragen. Zie [De vragen](#de-vragen) hieronder.
+  </Step>
+  <Step title="Stel je webserver in">
+    Laat je webserver naar de map `public` wijzen. De webserver moet kunnen schrijven in `storage` en `bootstrap/cache`.
+  </Step>
+</Steps>
+
+## Wat portal:install doet
+
+`portal:install` richt het portaal in:
+
+1. Bestaat `.env` niet of is het leeg, dan kopieert het `.env.example`.
+2. Het stelt de vragen en schrijft de antwoorden in `.env`. Je ziet ".env bijgewerkt.".
+3. Het maakt de sleutel van de app en twee api-keys: een die begint met `plt_` en een die begint met `ist_`.
+4. Het bouwt de database op.
+5. Het maakt de link `public/storage` als die er nog niet is.
+6. Het laat het blok voor de `config.yml` van de plugin zien.
+7. Het maakt een link om beheerder te worden. Die werkt één keer en is 24 uur geldig.
+
+Je kunt het commando gerust opnieuw draaien. De huidige waarden zie je dan als voorgestelde antwoorden. De sleutels blijven bewaard, tenzij je kiest voor nieuwe.
+
+### De vragen
+
+| Vraag | Standaard | Toelichting |
+|---|---|---|
+| **Hoe heet je portaal?** | | Spelers zien deze naam bovenaan het portaal. Verplicht. |
+| **Op welk adres open je het portaal?** | | Begint met `http://` of `https://`, bijvoorbeeld `https://portaal.jouwserver.nl`. Gebruik `https://` als je een domein met certificaat hebt, anders `http://` en het IP-adres. |
+| **Welk adres vullen spelers in Minecraft in?** | | Wordt in het portaal getoond. Mag leeg blijven. |
+| **Op welk adres draait de OpenMinetopia-plugin?** | `127.0.0.1` | `127.0.0.1` als de Minecraft-server op deze machine draait, anders het IP-adres van die server. |
+| **Op welke poort luistert de plugin-API?** | `4567` | `rest-api.port` uit de `config.yml` van de plugin. |
+| **Welke database gebruik je?** | MySQL | MySQL, MariaDB of SQLite. SQLite is één bestand en heeft geen databaseserver nodig. |
+| **Databaseserver** | `127.0.0.1` | Niet bij SQLite. |
+| **Poort van de database** | `3306` | Niet bij SQLite. |
+| **Naam van de database** | `omt_portal_central` | Niet bij SQLite. Deze standaard komt uit `.env.example`. |
+| **Gebruikersnaam van de database** | `openminetopia` | Niet bij SQLite. |
+| **Wachtwoord van de database** | | Niet bij SQLite. Laat het leeg om het huidige wachtwoord te houden. |
+| **Er staan al api-keys in .env. Wil je die houden?** | Ja | Alleen als er al keys zijn. Kies je nee, dan moet je ook de `config.yml` van de plugin aanpassen. |
+
+Kies je SQLite, dan komt de database in `database/database.sqlite`. Het bestand wordt aangemaakt als het er nog niet is.
+
+Draait de plugin op `127.0.0.1`, `localhost` of `::1`, dan zet het blok `host: 127.0.0.1` bij `rest-api`. De plugin hoeft dan alleen lokaal te luisteren. Anders staat er `host: 0.0.0.0`.
+
+### Opties
+
+Met opties sla je vragen over. Met `--no-interaction` stelt het commando geen vragen en gebruikt het voor ontbrekende waarden wat al in `.env` staat, of de standaardwaarde.
+
+| Optie | Wat het doet |
+|---|---|
+| `--name=` | Naam van het portaal. |
+| `--url=` | Adres van het portaal, bijvoorbeeld `https://portaal.jouwserver.nl`. |
+| `--server-address=` | Serveradres voor spelers, bijvoorbeeld `play.jouwserver.nl`. |
+| `--plugin-host=` | Waar de plugin draait, IP-adres of hostnaam. |
+| `--plugin-port=` | Poort van de plugin-API (`rest-api.port`). |
+| `--db-connection=` | `mysql`, `mariadb` of `sqlite`. |
+| `--db-host=` | Databaseserver. |
+| `--db-port=` | Poort van de database. |
+| `--db-database=` | Naam van de database. Bij SQLite het pad naar het bestand. |
+| `--db-username=` | Gebruikersnaam van de database. |
+| `--db-password=` | Wachtwoord van de database. |
+| `--new-keys` | Maakt nieuwe api-keys, ook als er al keys zijn. |
+| `--no-admin-link` | Maakt geen link om beheerder te worden. |
+| `--environment=` | De waarde voor `APP_ENV`. Standaard `production`. Bij een andere waarde zet het commando ook `APP_DEBUG` aan. |
+
+### Wat er in .env komt
+
+Naast je antwoorden zet `portal:install` deze waarden in `.env`:
+
+| Key | Waarde |
+|---|---|
+| `PORTAL_MODE` | `single` |
+| `PLUGIN_API_URL` | `http://` met het adres en de poort van de plugin |
+| `PLUGIN_API_KEY` | De `api-key` voor de plugin, begint met `plt_` |
+| `MINECRAFT_API_KEY` | De `token` voor de plugin, begint met `ist_` |
+| `SESSION_DRIVER` | `database` |
+| `CACHE_STORE` | `file` |
+| `QUEUE_CONNECTION` | `sync` |
+
+## Webserver
+
+Laat de document root van je webserver naar de map `public` wijzen. Voor Apache staat er een `.htaccess` in `public`. Voor nginx bevat de repository geen voorbeeldconfiguratie.
+
+De Docker-images gebruiken FrankenPHP, dat is Caddy met PHP erin. Dit is de Caddyfile uit de repository. `php_server` werkt alleen in FrankenPHP, niet in gewone Caddy.
+
+```text
+{
+	{$CADDY_GLOBAL_OPTIONS}
+	frankenphp
+}
+
+{$SERVER_NAME::80} {
+	root /app/public
+	encode zstd br gzip
+	php_server
+}
+```
+
+## Cron en queue
+
+Je hebt geen queue-worker nodig: `portal:install` zet `QUEUE_CONNECTION=sync`. Het portaal heeft ook geen geplande taken waarvoor je een cronjob moet instellen.
+
+## Logs
+
+Met de standaardinstellingen uit `.env.example` schrijft het portaal zijn logs naar `storage/logs/laravel.log`.
+
+## Beheerder worden en testen
+
+Open de link uit `portal:install` en log in of maak een account aan. Daarna ben je beheerder. Een nieuwe link maak je met:
+
+```bash
+php artisan portal:admin-link
+```
+
+Met `--hours=` kies je hoe lang de link geldig is. Standaard is dat 24 uur. Een nieuwe link maakt de vorige ongeldig.
+
+Zet daarna het blok in de `config.yml` van de plugin, herstart de Minecraft-server en test de verbinding:
+
+```bash
+php artisan portal:check
+```
+
+Wat de meldingen betekenen, lees je bij [Problemen oplossen](/portaal/problemen#de-verbinding-met-de-plugin-testen).
+
+## Proberen zonder Minecraft-server
+
+Wil je het portaal eerst uitproberen? Met de demomodus doet het portaal alsof er een plugin is, met een verzonnen stad.
+
+<Steps>
+  <Step title="Zet de demomodus aan">
+    Zet `PORTAL_DEMO=true` in `.env`. `APP_ENV` mag niet `production` zijn. `portal:install` zet standaard `APP_ENV=production`. Draai het dan met bijvoorbeeld `--environment=local`.
+  </Step>
+  <Step title="Laad de demodata">
+    ```bash
+    php artisan db:seed --class=DemoSeeder
+    ```
+  </Step>
+  <Step title="Log in">
+    Log in met `demo@openminetopia.nl` en wachtwoord `demo1234`, of open `/demo`. Dit account is beheerder.
+  </Step>
+</Steps>
+
+<Warning>
+De demomodus werkt nooit met `APP_ENV=production`. Gebruik hem niet voor een echt portaal.
+</Warning>
+
+Bijwerken en back-ups lees je bij [Updaten en backups](/portaal/updaten#handmatig).

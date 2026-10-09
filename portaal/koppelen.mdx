@@ -4,7 +4,7 @@ description: "De instellingen in config.yml waarmee de plugin en het portaal elk
 icon: "plug"
 ---
 
-{/* Bron: openminetopia src/main/java/nl/openminetopia/configuration/DefaultConfiguration.java, src/main/java/nl/openminetopia/modules/portal/ (PortalModule.java, commands/LinkCommand.java), src/main/java/nl/openminetopia/modules/restapi/ (RestAPIModule.java, verticles/MainVerticle.java), src/main/java/nl/openminetopia/OpenMinetopia.java, src/main/resources/default/messages.yml; omt-portal (origin/main) routes/api.php, routes/web.php, app/Http/Controllers/Api/MinecraftVerificationController.php, app/Http/Controllers/Auth/MinecraftVerificationController.php, app/Http/Controllers/Auth/RegisterController.php, app/Http/Middleware/ValidateApiKey.php, app/Http/Middleware/EnsureTenantActive.php, app/Http/Middleware/IdentifyTenant.php, app/Providers/AppServiceProvider.php, app/Services/Plugin/PluginApiService.php, app/Services/Plugin/PluginAddressGuard.php, resources/views/auth/verify.blade.php */}
+{/* Bron: openminetopia src/main/java/nl/openminetopia/configuration/DefaultConfiguration.java, src/main/java/nl/openminetopia/modules/portal/ (PortalModule.java, commands/LinkCommand.java), src/main/java/nl/openminetopia/modules/restapi/ (RestAPIModule.java, verticles/MainVerticle.java), src/main/java/nl/openminetopia/OpenMinetopia.java, src/main/resources/default/messages.yml; omt-portal (origin/main) routes/api.php, routes/web.php, app/Http/Controllers/Api/MinecraftVerificationController.php, app/Http/Controllers/Auth/MinecraftVerificationController.php, app/Http/Controllers/Auth/RegisterController.php, app/Http/Middleware/ValidateApiKey.php, app/Http/Middleware/EnsureTenantActive.php, app/Http/Middleware/IdentifyTenant.php, app/Providers/AppServiceProvider.php, app/Services/Plugin/PluginApiService.php, app/Services/Plugin/PluginHttp.php, app/Services/Plugin/PluginAddressGuard.php, app/Services/Plugin/PluginConnectionCheck.php, app/Console/Commands/PortalCheck.php, app/Console/Commands/PortalInstall.php, app/Support/Portal.php, config/portal.php, config/services.php, install.sh, resources/views/auth/verify.blade.php; Modrinth API project/openminetopia/version (laatste release 1.5.0); openminetopia commit fac8ff7 en tag 1.5.0 (PortalModule.java) */}
 
 Deze pagina geldt voor elk portaal, gehost of zelf gehost. Het portaal en de plugin moeten elkaar allebei kunnen bereiken. Dat regel je met twee secties in de `config.yml` van de plugin: `rest-api` en `portal`.
 
@@ -47,7 +47,7 @@ Via de REST API haalt het portaal gegevens op uit de plugin. Meer over de API le
 Herstart de server na het aanpassen. Bij het starten van de REST API zie je in de console `HTTP server started on port 4567 and host 0.0.0.0`, met jouw poort en host.
 
 <Tip>
-Heb je een gehost portaal? Dan staat het hele blok met de juiste waarden op je portaalpagina op openminetopia.nl. Zie [Gehost portaal](/portaal/gehost#plugin-koppelen).
+Je hoeft het blok niet zelf in te vullen. Bij een gehost portaal staat het met de juiste waarden op je portaalpagina op openminetopia.nl. Zie [Gehost portaal](/portaal/gehost#plugin-koppelen). Host je het portaal zelf, dan laat `php artisan portal:install` het blok met je eigen sleutels zien. Het installatiescript en het Pterodactyl-egg doen dat ook. Zie [Zelf hosten](/portaal/zelf-hosten).
 </Tip>
 
 ### Zo maakt de plugin een adres van portal.url
@@ -64,18 +64,45 @@ De plugin zet `/api` achter het adres. Bij `/koppel` roept hij daarna `/minecraf
 - Staat er alleen een hostnaam, dan zet de plugin er `https://` voor.
 - Eindigt de hostnaam op `.test`, dan gebruikt de plugin `http://`. Dat is bedoeld voor lokaal testen.
 
+<Note>
+Deze regels gelden voor een plugin-versie nieuwer dan 1.5.0. Op Modrinth is 1.5.0 nog de nieuwste versie, dus daarvoor heb je een build van de `master`-branch nodig. Versie 1.5.0 zet altijd `https://` voor `portal.url`. Vul daar alleen de hostnaam in. Koppelen werkt met 1.5.0 dus alleen als je portaal HTTPS heeft.
+</Note>
+
 ## Poorten
 
 | Richting | Wat moet open |
 |---|---|
-| Portaal naar plugin | De poort van `rest-api.port` (standaard `4567`, TCP) op je Minecraft-server. Het portaal moet die vanaf internet kunnen bereiken. Zet hem open bij je host of in je firewall. |
-| Plugin naar portaal | Je Minecraft-server moet het portaal kunnen bereiken op het adres uit `portal.url`. Meestal is dat HTTPS. Dat is nodig voor `/koppel`. |
+| Portaal naar plugin | De poort van `rest-api.port` (standaard `4567`, TCP) op je Minecraft-server. Het portaal moet die kunnen bereiken. Bij een gehost portaal is dat vanaf internet: zet de poort open bij je host of in je firewall. |
+| Plugin naar portaal | Je Minecraft-server moet het portaal kunnen bereiken op het adres uit `portal.url`. Dat is nodig voor `/koppel`. |
 
-De REST API van de plugin werkt via gewone `http://`, zonder HTTPS. Het portaal accepteert alleen een poort tussen 1024 en 65535.
+De REST API van de plugin werkt via gewone `http://`, zonder HTTPS.
 
 <Warning>
-Het portaal weigert interne adressen, zoals `127.0.0.1`, `10.x.x.x` en `192.168.x.x`. Ook een hostnaam die naar zo'n adres wijst, werkt niet. Gebruik het openbare IP-adres of een openbare hostnaam van je Minecraft-server.
+Dit geldt alleen voor een gehost portaal. Dat weigert interne adressen, zoals `127.0.0.1`, `10.x.x.x` en `192.168.x.x`. Ook een hostnaam die naar zo'n adres wijst, werkt niet. En de poort moet tussen 1024 en 65535 liggen. Gebruik het openbare IP-adres of een openbare hostnaam van je Minecraft-server.
 </Warning>
+
+Een zelf gehost portaal doet deze controle niet. Het adres van de plugin staat daar in `PLUGIN_API_URL` in de `.env` van het portaal. Een intern adres zoals `127.0.0.1` of een adres in je eigen netwerk mag dus. Roept het portaal de plugin aan op `127.0.0.1`, `localhost` of `::1`, dan zet `portal:install` in het blok `host: 127.0.0.1`. In alle andere gevallen zet het er `host: 0.0.0.0` in.
+
+### De verbinding testen
+
+Host je het portaal zelf, dan test je de verbinding met de plugin op de server van het portaal:
+
+```bash
+php artisan portal:check
+```
+
+Gebruikte je het installatiescript, dan typ je `openminetopia-portal check`. Dat voert hetzelfde commando uit in de Docker-container.
+
+Het commando roept de plugin twee keer aan: één keer zonder en één keer met de `api-key`. Zo ziet het of er echt een OpenMinetopia-plugin antwoordt en of de key klopt. Gaat het goed, dan zie je `Verbonden in ... ms. Het portaal bereikt de plugin.` Gaat het mis, dan zegt het commando wat je kunt controleren:
+
+| Melding | Wat je controleert |
+|---|---|
+| `De plugin antwoordt, maar de api-key klopt niet.` | Zet dezelfde key in `rest-api.api-key` als in `PLUGIN_API_KEY` en herstart de server. |
+| `We krijgen geen antwoord van ...` | Of de server aan staat, `rest-api.enabled` op `true` en `rest-api.host` op `0.0.0.0` staat, en de poort open is bij je host of in je firewall. |
+| `... weigert de verbinding.` | Of de plugin draait en de poort gelijk is aan `rest-api.port`. |
+| `We kunnen ... niet vinden.` | Of het adres klopt. Gebruik anders het IP-adres van je server. |
+
+Zijn `PLUGIN_API_URL` of `PLUGIN_API_KEY` leeg, dan stopt het commando en vraagt het je eerst `php artisan portal:install` te draaien. Dit commando test alleen de richting portaal naar plugin. Of `/koppel` werkt, test je in-game.
 
 ## Je account koppelen als speler
 
@@ -127,7 +154,7 @@ In de console staat dan een waarschuwing als `Response code 401 Unauthorized whi
 | 404 | De code bestaat niet. Of `portal.url` wijst naar een adres waar geen portaal staat. | Laat de speler de code opnieuw kopiëren. Controleer `portal.url`. |
 | 400 | Het account is al gekoppeld, of de speler is in-game met een ander Minecraft-account dan waarmee hij zich registreerde. | Join met hetzelfde account als op het portaal. |
 | 422 | De code heeft niet de juiste vorm. Een code is 32 tekens lang. | Kopieer het commando opnieuw van het portaal. |
-| 423 | Het portaal staat op pauze. | Verleng het portaal. Zie [Gehost portaal](/portaal/gehost#verlengen). |
+| 423 | Het portaal staat op pauze. Dit komt alleen voor bij een gehost portaal. | Verleng het portaal. Zie [Gehost portaal](/portaal/gehost#verlengen). |
 | 429 | Te veel pogingen. Het portaal accepteert 30 koppelpogingen per minuut vanaf hetzelfde IP-adres. | Wacht even en probeer het opnieuw. |
 | 500 | Er ging iets mis op het portaal. | Probeer het later opnieuw. |
 
@@ -137,7 +164,7 @@ Het portaal vergelijkt de naam en de UUID van de speler met de gegevens van Moja
 
 In de console staat dan `An error occurred while trying to verify player Steve:` met de foutmelding erachter. De plugin kreeg geen antwoord van het portaal. Controleer:
 
-- of `portal.url` naar het juiste adres wijst, met `http://` ervoor als je portaal geen HTTPS heeft;
+- of `portal.url` naar het juiste adres wijst, met `http://` ervoor als je portaal geen HTTPS heeft (dat kan pas in een plugin-versie nieuwer dan 1.5.0);
 - of de hostnaam klopt en bestaat;
 - of je Minecraft-server uitgaande verbindingen naar het portaal mag maken.
 

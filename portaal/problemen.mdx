@@ -1,0 +1,142 @@
+---
+title: "Problemen oplossen"
+description: "De meldingen van het installatiescript, de verbindingstest en de database, en hoe je de logs van een zelf gehost portaal bekijkt."
+icon: "wrench"
+---
+
+{/* Bron: omt-portal (origin/main) install.sh, docker-compose.yml, docker/entrypoint.sh, docker/pterodactyl-start.sh, docker/Caddyfile, Dockerfile, .env.example, README.md, app/Console/Commands/PortalCheck.php, app/Console/Commands/PortalInstall.php, app/Console/Commands/PortalAdminLink.php, app/Console/Commands/PortalWaitForDatabase.php, app/Console/Commands/UserSetAdminCommand.php, app/Services/Plugin/PluginConnectionCheck.php, app/Services/Plugin/PluginHttp.php, app/Services/Tenancy/AdminClaim.php, app/Http/Controllers/Auth/AdminClaimController.php, resources/views/auth/admin-claim-invalid.blade.php, app/Providers/AppServiceProvider.php, database/migrations/2024_12_10_000001_create_critical_data.php; openminetopia src/main/java/nl/openminetopia/modules/portal/PortalModule.java */}
+
+Deze pagina gaat over een zelf gehost portaal. Heb je een gehost portaal, kijk dan bij [Gehost portaal](/portaal/gehost).
+
+## Logs bekijken
+
+Begin altijd met de logs. Daar staat meestal wat er mis is.
+
+| Manier | Zo bekijk je de logs |
+|---|---|
+| Installatiescript | `openminetopia-portal logs` voor het portaal. Voor de database: `docker compose -f /opt/openminetopia-portal/docker-compose.yml logs db`. |
+| Docker zonder script | `docker compose logs -f portal` of `docker compose logs db`, in de map met `docker-compose.yml`. |
+| Pterodactyl | De console van de server in het panel. |
+| Handmatig | `storage/logs/laravel.log` in de map van het portaal. |
+
+In de Docker-images schrijft het portaal zijn logs niet naar een bestand, maar naar de uitvoer van de container.
+
+## Het installatiescript stopt
+
+Gaat er iets mis, dan stopt het script met een regel die begint met "Fout:".
+
+| Melding | Wat je doet |
+|---|---|
+| "Docker met Docker Compose is nodig. Installeer Docker Desktop en start dit script opnieuw." | Je draait het script niet op Linux en Docker ontbreekt. Installeer Docker Desktop. |
+| "Start dit script met sudo om Docker te installeren." | Start het script met `sudo`. |
+| "Installeer Docker en start dit script opnieuw: https://docs.docker.com/engine/install/" | Je wilde Docker niet laten installeren. Installeer het zelf en start het script opnieuw. |
+| "Docker draait niet, of je hebt geen rechten. Start het script met sudo." | Start Docker, of start het script met `sudo`. |
+| "Vul een domeinnaam of IP-adres in." | Je liet het adres leeg. Zonder vragen: zet `OMT_ADDRESS`. |
+| "Vul een e-mailadres in voor het certificaat." | Bij een domeinnaam is een e-mailadres nodig. Zonder vragen: zet `OMT_EMAIL`. |
+| "Vul een naam in." | Zonder vragen: zet `OMT_NAME`. |
+| "Vul het adres van de Minecraft-server in." | Je koos `2` maar liet het adres leeg. |
+| "De poort moet een getal tussen 1 en 65535 zijn." | Vul een geldige poort in bij de plugin-API. |
+| "Kon docker-compose.yml niet downloaden van ..." | Het downloaden van GitHub lukte niet. Controleer de internetverbinding van je server, en `OMT_REF` als je die hebt ingesteld. |
+| "De database start niet. Bekijk de logs: docker compose -f ... logs db" | Voer het commando uit de melding uit en bekijk waarom MariaDB niet start. |
+| "Inrichten van het portaal is mislukt." | `portal:install` ging mis. Boven de melding staat de uitvoer van dat commando. |
+
+Zie je aan het eind "Het portaal antwoordt nog niet; bekijk de logs met: openminetopia-portal logs"? Dan is de installatie wel klaar, maar antwoordde het portaal nog niet. Bekijk de logs.
+
+## De database is niet bereikbaar
+
+Het portaal wacht bij het starten op de database. Lukt dat niet, dan zie je "De database is niet bereikbaar:" met de foutmelding van de database erachter.
+
+| Manier | Hoe lang het wacht | Wat er daarna gebeurt |
+|---|---|---|
+| Installatiescript en Docker | 60 seconden, in te stellen met `PORTAL_DB_TIMEOUT` | De webserver start toch, maar de database wordt niet bijgewerkt. |
+| Pterodactyl | 60 seconden | De server stopt. Controleer de databasegegevens bij **Startup**. Ze moeten gelijk zijn aan die op het tabblad **Databases**. |
+
+Kan `portal:install` de database niet bijwerken, dan zie je "De database kon niet worden bijgewerkt. Controleer de databasegegevens in .env en draai dit commando opnieuw."
+
+Bij Docker zonder script zie je "Zet DB_PASSWORD in .env" of "Zet DB_ROOT_PASSWORD in .env" als een wachtwoord ontbreekt. Zie [Docker](/portaal/zelf-hosten/docker#instellingen-in-env).
+
+## Het portaal is nog niet ingericht
+
+Zie je in de logs "Het portaal is nog niet ingericht. Draai: php artisan portal:install"? Dan draait alleen de webserver. Richt het portaal in:
+
+```bash
+docker compose exec portal php artisan portal:install
+```
+
+Bij Docker zonder script geef je de databasegegevens mee. Zie [Docker](/portaal/zelf-hosten/docker#installeren).
+
+## De verbinding met de plugin testen
+
+Test of het portaal de plugin bereikt en of de `api-key` klopt:
+
+| Manier | Commando |
+|---|---|
+| Installatiescript | `openminetopia-portal check` |
+| Docker zonder script | `docker compose exec portal php artisan portal:check` |
+| Handmatig | `php artisan portal:check` |
+
+Je ziet eerst "Plugin testen op" met het adres van de plugin. Daarna een van deze meldingen. Hierin staan `203.0.113.10`, `mc.jouwserver.nl` en `4567` voor jouw adres en poort.
+
+| Melding | Wat het betekent | Wat je doet |
+|---|---|---|
+| "Verbonden in 42 ms. Het portaal bereikt de plugin." | Alles werkt. | Niets. |
+| "De plugin antwoordt, maar de api-key klopt niet. Kopieer rest-api → api-key opnieuw naar de config.yml en herstart de server." | De plugin weigert de key. | Zet de `api-key` uit het blok van `portal:install` in de `config.yml` en herstart de Minecraft-server. |
+| "We krijgen geen antwoord van 203.0.113.10:4567. Staat de server aan, staat bij rest-api enabled: true en host: 0.0.0.0, en is poort 4567 open bij je host of in je firewall?" | De verbinding loopt vast of het adres is onbereikbaar. | Controleer `rest-api.enabled` en `rest-api.host`. Zet de poort open in je firewall. |
+| "203.0.113.10:4567 weigert de verbinding. Draait de plugin, en is 4567 dezelfde poort als rest-api → port in de config.yml?" | Op dat adres luistert niets op die poort. | Controleer of de plugin draait en of de poort gelijk is aan `rest-api.port`. |
+| "We kunnen mc.jouwserver.nl niet vinden. Controleer het adres, of gebruik het IP-adres van je server." | De hostnaam bestaat niet. | Controleer de hostnaam of gebruik het IP-adres. |
+| "Het portaal bereikt de plugin op 203.0.113.10:4567 niet." | Een andere fout. Tussen haakjes staat soms een technische melding. Bij "this does not look like the OpenMinetopia plugin" antwoordt er op die poort een andere webserver dan de plugin. | Controleer of het adres en de poort naar de plugin wijzen. Vul de poort van `rest-api.port` in, niet die van Minecraft. |
+| "PLUGIN_API_URL en PLUGIN_API_KEY zijn niet ingevuld. Draai eerst php artisan portal:install." | Het portaal is nog niet ingericht. | Draai `portal:install`. |
+
+Het adres van de plugin pas je aan met `openminetopia-portal instellen`, `portal:install` of, bij Pterodactyl, de variabelen `PLUGIN_HOST` en `PLUGIN_PORT`.
+
+<Tip>
+Draait het portaal in Docker of Pterodactyl, dan is `127.0.0.1` het portaal zelf, niet je Minecraft-server. Gebruik bij Docker `host.docker.internal` als de Minecraft-server op dezelfde machine draait. Bij Pterodactyl vul je het IP-adres van de Minecraft-server in.
+</Tip>
+
+## Koppelen met /koppel lukt niet
+
+Werkt `/koppel` niet, dan staat de oorzaak in de console van je Minecraft-server. Alle meldingen en oplossingen staan bij [Koppelen met de plugin](/portaal/koppelen#als-koppelen-mislukt).
+
+Draait je portaal zonder HTTPS? Dan werkt `/koppel` pas met een plugin-versie die `http://` in `portal.url` ondersteunt. Dat kan met een build van de `master`-branch van de plugin, of met een release die nieuwer is dan 1.5.0. `portal:install` waarschuwt hiervoor met "Je portaal draait zonder HTTPS."
+
+## HTTPS werkt niet
+
+Met het installatiescript of Docker regelt Caddy het HTTPS-certificaat zelf. Controleer dit:
+
+- Je hebt een domeinnaam ingevuld, geen IP-adres. Met een IP-adres draait het portaal alleen op HTTP.
+- De domeinnaam wijst al naar het IP-adres van je server.
+- Poort 80 en 443 staan open.
+- Caddy vraagt het certificaat aan als het portaal start. Dat kan een minuut duren.
+
+De certificaten staan in het Docker-volume `caddy-data`. Ze blijven bewaard als je het portaal herstart of bijwerkt.
+
+Pterodactyl geeft het portaal alleen HTTP. Voor HTTPS zet je er zelf een reverse proxy of Cloudflare voor. Zie [Pterodactyl](/portaal/zelf-hosten/pterodactyl#https).
+
+## De beheerderslink werkt niet meer
+
+Een link om beheerder te worden werkt één keer en is standaard 24 uur geldig. Een nieuwe link maakt de vorige ongeldig. Is de link verlopen of al gebruikt, dan zie je "Deze link werkt niet meer". Maak dan een nieuwe:
+
+| Manier | Commando |
+|---|---|
+| Installatiescript | `openminetopia-portal admin-link` |
+| Docker zonder script | `docker compose exec portal php artisan portal:admin-link` |
+| Pterodactyl | Herstart de server. Zolang er nog geen beheerder is, krijg je bij elke start een nieuwe link. |
+| Handmatig | `php artisan portal:admin-link` |
+
+Met `--hours=` kies je hoe lang de link geldig is. Open de link meteen en log in of maak een account aan. Daarna zie je "Je bent nu beheerder van dit portaal."
+
+<Accordion title="Beheerder maken zonder link">
+  Heeft de persoon al een account op het portaal? Dan maak je die ook zonder link beheerder:
+
+  ```bash
+  php artisan user:set-admin <e-mailadres>
+  ```
+
+  In plaats van het e-mailadres mag ook het id van het account. Zonder `--role-id` zoekt het commando rollen met "admin" in de naam en laat je er een kiezen. Vindt het die niet, dan kiest het de rol met id 1. In een nieuw portaal is dat de rol **Beheerder**. Met `--force` slaat het de bevestiging over.
+
+  Met het installatiescript gebruik je `openminetopia-portal artisan user:set-admin`. Bij Docker zonder script zet je er `docker compose exec portal` voor.
+</Accordion>
+
+## Kom je er niet uit?
+
+Stel je vraag op [Discord](/community/discord). Een bug meld je bij de [issues van het portaal](https://github.com/OpenMinetopia/portal/issues).

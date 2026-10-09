@@ -15,7 +15,7 @@ De plugin maakt de bestanden zelf aan bij de eerste start. Een modulebestand ver
 | Bestand | Gemaakt door | Uitleg |
 |---|---|---|
 | `config.yml` | `DefaultConfiguration` | Algemene instellingen. Staat hieronder. |
-| `messages.yml` | `MessageConfiguration` | Alle berichten van de plugin. Zie [Berichten](#berichten-messagesyml). |
+| `messages.yml` | `MessageConfiguration` | Alle berichten van de plugin. Zie [Berichten](#berichten). |
 | `levelcheck.yml` | `LevelCheckConfiguration` (module `player`) | [Levels](/plugin/modules/levels) |
 | `banking.yml` | `BankingConfiguration` (module `banking`) | [Bankieren](/plugin/modules/bankieren) |
 | `currencies.yml` | `CurrencyConfiguration` (module `currencies`) | [Valuta](/plugin/modules/valuta) |
@@ -600,7 +600,7 @@ disabled-modules:
   Niet elke module kan zonder problemen uit. Sommige onderdelen vragen andere modules direct op. Zo gebruikt de opmaak van chat, scoreboard en actiebalk altijd `banking` en `currencies`, en de chat ook `police`. Zet je zo'n module uit, dan kun je fouten in de console krijgen. Zet je `core` uit, dan verdwijnt ook `/openminetopia reload`.
 </Warning>
 
-## Berichten (messages.yml)
+## Berichten
 
 In `messages.yml` staan alle teksten die spelers van de plugin te zien krijgen. Elk bericht is één regel met een sleutel en een tekst:
 
