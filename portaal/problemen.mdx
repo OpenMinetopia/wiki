@@ -120,7 +120,7 @@ Een link om beheerder te worden werkt één keer en is standaard 24 uur geldig. 
 |---|---|
 | Installatiescript | `openminetopia-portal admin-link` |
 | Docker zonder script | `docker compose exec portal php artisan portal:admin-link` |
-| Pterodactyl | Herstart de server. Zolang er nog geen beheerder is, krijg je bij elke start een nieuwe link. |
+| Pterodactyl | Typ `adminlink` in de console, of herstart de server. Zolang er nog geen beheerder is, krijg je bij elke start een nieuwe link. |
 | Handmatig | `php artisan portal:admin-link` |
 
 Met `--hours=` kies je hoe lang de link geldig is. Open de link meteen en log in of maak een account aan. Daarna zie je "Je bent nu beheerder van dit portaal."

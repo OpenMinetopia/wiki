@@ -4,7 +4,7 @@ description: "Het portaal draaien als server in je Pterodactyl-panel, met het eg
 icon: "server"
 ---
 
-{/* Bron: omt-portal (origin/main) pterodactyl/egg-openminetopia-portal.json, docker/pterodactyl-entrypoint.sh, docker/pterodactyl-start.sh, Dockerfile, .github/workflows/release.yml, README.md, app/Console/Commands/PortalInstall.php, app/Console/Commands/PortalAdminLink.php, app/Console/Commands/PortalWaitForDatabase.php */}
+{/* Bron: omt-portal (origin/main) pterodactyl/egg-openminetopia-portal.json, docker/pterodactyl-entrypoint.sh, docker/pterodactyl-start.sh, Dockerfile, .github/workflows/release.yml, README.md, app/Console/Commands/PortalInstall.php, app/Console/Commands/PortalAdminLink.php, app/Console/Commands/PortalWaitForDatabase.php, app/Console/Commands/PortalCheck.php */}
 
 Heb je een Pterodactyl-panel? Dan draai je het portaal als gewone server met het egg **OpenMinetopia Portal**. Het portaal richt zichzelf in met de variabelen die je bij **Startup** invult.
 
@@ -47,6 +47,10 @@ Bij het installeren van de server maakt het egg alleen de map `storage` en een l
 
 Het portaal verbindt met de database als MySQL.
 
+<Warning>
+Staat op het tabblad **Databases** `127.0.0.1` als host? Vul dat dan niet in bij `DB_HOST`. In de container is `127.0.0.1` het portaal zelf. Vul het IP-adres in waarop de container de host bereikt, meestal het gateway-adres van het Docker-netwerk van Wings, zoals `172.18.0.1`. MySQL moet dan ook op dat adres luisteren en verbindingen van de container toestaan.
+</Warning>
+
 ## Wat er bij elke start gebeurt
 
 Bij elke start:
@@ -55,6 +59,7 @@ Bij elke start:
 2. Draait het `portal:install` met de variabelen van de server. De sleutels en gegevens blijven bewaard. Een gewijzigde variabele gaat dus in bij de volgende start.
 3. Zolang er nog geen beheerder is, maakt het een nieuwe link om beheerder te worden.
 4. Start het de webserver op de poort van de server.
+5. Luistert het naar [commando's in de console](#commandos-in-de-console).
 
 ## Wat de console laat zien
 
@@ -85,19 +90,58 @@ De link werkt één keer en is 24 uur geldig. Een nieuwe link maakt de vorige on
   https://portaal.jouwserver.nl/beheerder-worden/...
 ```
 
-Tot slot zie je `Portaal draait op poort 8080.`, met de poort van jouw server. Dan staat de server in het panel op online.
+Tot slot zie je `Portaal draait op poort 8080.`, met de poort van jouw server, en de lijst met commando's. Dan staat de server in het panel op online.
 
 <Tip>
-Is de link verlopen? Herstart de server. Zolang er geen beheerder is, krijg je bij elke start een nieuwe link. De link van de vorige start werkt dan niet meer.
+Is de link verlopen? Typ `adminlink` in de console, of herstart de server. Zolang er geen beheerder is, krijg je bij elke start een nieuwe link. De link van de vorige start werkt dan niet meer.
 </Tip>
 
 Zet het blok in `plugins/OpenMinetopia/config.yml` op je Minecraft-server en herstart die. Wat elke regel doet, lees je bij [Koppelen met de plugin](/portaal/koppelen).
 
+## Commando's in de console
+
+Als het portaal draait, typ je deze commando's in de console van de server:
+
+| Commando | Wat het doet |
+|---|---|
+| `help` | Laat de lijst met commando's zien. |
+| `adminlink` | Maakt een nieuwe link om beheerder te worden. De vorige link werkt dan niet meer. |
+| `check` | Test of het portaal de plugin bereikt en of de api-key klopt. |
+| `migrate` | Werkt de database bij. |
+| `stop` | Stopt het portaal. |
+
+Typ je iets anders, dan zegt de console dat het commando onbekend is en dat je `help` kunt typen.
+
+De knop **Stop** in het panel stopt het portaal ook netjes. Je hoeft de server niet te killen.
+
 ## HTTPS
 
-Het portaal luistert met gewone HTTP op de poort van de server. Wil je HTTPS, zet er dan een reverse proxy zoals nginx of Caddy, of Cloudflare voor. Vul bij `PORTAL_URL` dan het `https://`-adres in.
+Het portaal luistert met gewone HTTP op de poort van de server. Wil je HTTPS, zet er dan een reverse proxy zoals nginx of Caddy, of Cloudflare voor. Vul bij `PORTAL_URL` dan het `https://`-adres in. Spelers kunnen hun account pas koppelen (`/koppel`) als het portaal HTTPS heeft.
 
 Gebruik je geen HTTPS, vul dan `http://`, het IP-adres en de poort van de server in, bijvoorbeeld `http://203.0.113.10:8080`.
+
+### Met Cloudflare
+
+Cloudflare stuurt verkeer via de proxy alleen naar een paar vaste poorten, zoals 80, 443, 8080 en 8443. Je Pterodactyl-server heeft meestal een andere poort. Met een Origin Rule stuur je het verkeer naar de juiste poort. Dat kan op elk Cloudflare-plan.
+
+<Steps>
+  <Step title="Maak een DNS-record">
+    Ga naar **DNS** en klik **Add record**. Kies type `A`, vul bij **Name** bijvoorbeeld `portaal` in en bij **IPv4 address** het IP-adres van de server, zonder poort. Zet **Proxy status** aan (oranje wolkje).
+  </Step>
+  <Step title="Stuur het verkeer naar de poort van de server">
+    Ga naar **Rules**, **Origin Rules** en maak een regel. Kies als voorwaarde **Hostname** *equals* `portaal.jouwserver.nl`. Kies bij **Destination Port** *Rewrite to* en vul de poort van de server in.
+  </Step>
+  <Step title="Zet SSL op Flexible">
+    Het portaal zelf praat HTTP, Cloudflare doet de HTTPS. Zet daarom bij **SSL/TLS** de modus op **Flexible**. Gebruikt de rest van je domein **Full**? Maak dan bij **Rules**, **Configuration Rules** een regel voor alleen deze hostname met **SSL** op **Flexible**.
+  </Step>
+  <Step title="Pas het adres aan">
+    Vul bij **Startup** `PORTAL_URL` in als `https://portaal.jouwserver.nl` en herstart de server. Zet daarna het nieuwe adres bij `portal.url` in de `config.yml` van de plugin en herstart de Minecraft-server.
+  </Step>
+</Steps>
+
+<Tip>
+Krijg je een foutpagina 521 of 522 van Cloudflare? Controleer dan de Origin Rule en of de poort van de server open staat in de firewall van je host.
+</Tip>
 
 ## Updaten
 
